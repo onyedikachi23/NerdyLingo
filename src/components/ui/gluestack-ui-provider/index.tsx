@@ -7,13 +7,13 @@ import { OverlayProvider } from "@gluestack-ui/core/overlay/creator";
 
 import { useColorScheme } from "nativewind";
 
-export type ModeType = "light" | "dark" | "system";
+export type ThemeMode = "light" | "dark" | "system";
 
 export function GluestackUIProvider({
 	mode = "light",
 	...props
 }: {
-	mode?: ModeType;
+	mode?: ThemeMode;
 	children?: React.ReactNode;
 	style?: ViewProps["style"];
 }) {
