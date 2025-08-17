@@ -24,10 +24,15 @@ export function GluestackUIProvider({
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [mode]);
 
+	// useMemo will avoid nativewind remounting the entire app whenever a new css variable is used.
+	const themeStyle = React.useMemo(() => {
+		return config[colorScheme!];
+	}, [colorScheme]);
+
 	return (
 		<View
 			style={[
-				config[colorScheme!],
+				themeStyle,
 				{ flex: 1, height: "100%", width: "100%" },
 				props.style,
 			]}>
