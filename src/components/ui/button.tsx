@@ -42,15 +42,15 @@ const buttonStyle = tva({
 	variants: {
 		variant: {
 			default:
-				"bg-primary-500 data-[hover=true]:bg-primary-600 data-[active=true]:bg-primary-700 border border-primary-300 data-[hover=true]:border-primary-400 data-[active=true]:border-primary-500",
+				"bg-primary-500 data-[active=true]:bg-primary-600 border border-primary-300 data-[active=true]:border-primary-400",
 			destructive:
-				"bg-error-500 data-[hover=true]:bg-error-600 data-[active=true]:bg-error-700 border border-error-300 data-[hover=true]:border-error-400 data-[active=true]:border-error-500",
+				"bg-error-500 data-[active=true]:bg-error-600 border border-error-300 data-[active=true]:border-error-400",
 			secondary:
-				"bg-secondary-500 data-[hover=true]:bg-secondary-600 data-[active=true]:bg-secondary-700 border border-secondary-300 data-[hover=true]:border-secondary-400 data-[active=true]:border-secondary-500",
+				"bg-secondary-500 data-[active=true]:bg-secondary-600 border border-secondary-300 data-[active=true]:border-secondary-400",
 			outline:
-				"bg-transparent border border-outline-500 data-[hover=true]:bg-background-50 data-[active=true]:bg-transparent",
-			ghost: "bg-transparent data-[hover=true]:bg-background-50 data-[active=true]:bg-background-100",
-			link: "px-0 bg-transparent data-[hover=true]:bg-background-50 data-[active=true]:bg-transparent",
+				"bg-transparent border border-outline-500 data-[active=true]:bg-background-50",
+			ghost: "bg-transparent data-[active=true]:bg-background-50",
+			link: "px-0 bg-transparent data-[active=true]:bg-background-50",
 		},
 		size: {
 			default: "h-9 px-4 py-2",
@@ -66,15 +66,14 @@ const buttonTextStyle = tva({
 	parentVariants: {
 		variant: {
 			default:
-				"text-typography-950 data-[hover=true]:text-typography-950 data-[active=true]:text-typography-950",
+				"text-typography-950 data-[active=true]:text-typography-950",
 			destructive:
-				"text-typography-50 data-[hover=true]:text-typography-50 data-[active=true]:text-typography-50",
+				"text-typography-50 data-[active=true]:text-typography-50",
 			secondary:
-				"text-typography-50 data-[hover=true]:text-typography-50 data-[active=true]:text-typography-50",
-			outline:
-				"text-typography-500 data-[hover=true]:text-primary-500 data-[active=true]:text-primary-600",
-			ghost: "text-typography-500 data-[hover=true]:text-primary-500 data-[active=true]:text-primary-600",
-			link: "text-primary-500 underline-offset-4 data-[hover=true]:underline data-[active=true]:underline",
+				"text-typography-50 data-[active=true]:text-typography-50",
+			outline: "text-typography-500 data-[active=true]:text-primary-500",
+			ghost: "text-typography-500 data-[active=true]:text-primary-500",
+			link: "text-primary-500 underline-offset-4 data-[active=true]:underline",
 		},
 		size: {
 			default: "text-sm",
@@ -86,16 +85,15 @@ const buttonTextStyle = tva({
 });
 
 const buttonIconStyle = tva({
-	base: "fill-none",
+	base: "",
 	parentVariants: {
 		variant: {
 			default: "text-typography-950",
 			destructive: "text-typography-50",
-			secondary: "text-typography-50",
-			outline:
-				"text-typography-600 data-[hover=true]:text-primary-500 data-[active=true]:text-primary-600",
-			ghost: "text-typography-600 data-[hover=true]:text-primary-500 data-[active=true]:text-primary-600",
-			link: "text-primary-500 data-[hover=true]:text-primary-600 data-[active=true]:text-primary-700",
+			secondary: "text-typography-800",
+			outline: "text-typography-600 data-[active=true]:text-primary-500",
+			ghost: "text-typography-600 data-[active=true]:text-primary-500",
+			link: "text-primary-500 data-[active=true]:text-primary-600",
 		},
 		size: {
 			default: "h-4 w-4",
@@ -200,6 +198,7 @@ type ButtonIconProps = Prettify<
 const ButtonIcon: React.FC<ButtonIconProps> = ({
 	className,
 	size,
+	fill = "transparent",
 	...props
 }) => {
 	const { variant: parentVariant, size: parentSize } = useStyleContext(
@@ -212,6 +211,7 @@ const ButtonIcon: React.FC<ButtonIconProps> = ({
 				{...props}
 				className={buttonIconStyle({ class: className })}
 				size={size}
+				fill={fill}
 			/>
 		);
 	} else if (
@@ -222,6 +222,7 @@ const ButtonIcon: React.FC<ButtonIconProps> = ({
 			<UIButton.Icon
 				{...props}
 				className={buttonIconStyle({ class: className })}
+				fill={fill}
 			/>
 		);
 	}
@@ -236,6 +237,7 @@ const ButtonIcon: React.FC<ButtonIconProps> = ({
 				size,
 				class: className,
 			})}
+			fill={fill}
 		/>
 	);
 };
