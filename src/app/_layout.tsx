@@ -24,9 +24,20 @@ configureReanimatedLogger({
 
 export default function RootLayout() {
 	const colorScheme = useColorScheme();
+
 	return (
 		<ThemeProvider
-			value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+			value={
+				colorScheme === "dark"
+					? DarkTheme
+					: {
+							...DefaultTheme,
+							colors: {
+								...DefaultTheme.colors,
+								background: "transparent",
+							},
+					  }
+			}>
 			<GluestackUIProvider mode={colorScheme ?? "system"}>
 				<Box className="flex-1 bg-background-50">
 					<Stack />
