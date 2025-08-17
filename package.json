@@ -11,6 +11,7 @@
     "lint": "expo lint"
   },
   "dependencies": {
+    "@expo-google-fonts/inter": "^0.4.1",
     "@gluestack-ui/core": "^3.0.0-alpha.5",
     "@gluestack-ui/utils": "^3.0.0-alpha.1",
     "@legendapp/motion": "^2.4.0",
