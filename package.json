@@ -12,8 +12,9 @@
 	},
 	"dependencies": {
 		"@expo-google-fonts/inter": "^0.4.1",
-		"@gluestack-ui/core": "^3.0.0-alpha.5",
-		"@gluestack-ui/utils": "^3.0.0-alpha.1",
+		"@gluestack-ui/nativewind-utils": "^1.0.26",
+		"@gluestack-ui/overlay": "^0.1.22",
+		"@gluestack-ui/image": "^0.1.17",
 		"@legendapp/motion": "^2.4.0",
 		"@react-navigation/bottom-tabs": "^7.3.10",
 		"@react-navigation/elements": "^2.3.8",

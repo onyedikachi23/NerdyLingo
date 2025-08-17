@@ -3,8 +3,8 @@
 import React from "react";
 import { View, type ViewProps } from "react-native";
 
-import type { VariantProps } from "@gluestack-ui/utils/nativewind-utils";
-import { tva } from "@gluestack-ui/utils/nativewind-utils";
+import type { VariantProps } from "@gluestack-ui/nativewind-utils";
+import { tva } from "@gluestack-ui/nativewind-utils/tva";
 import { PropSlot, type AsChildProps } from "./slot";
 
 const boxStyle = tva({

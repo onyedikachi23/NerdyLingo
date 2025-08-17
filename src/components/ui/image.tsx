@@ -1,11 +1,15 @@
 /** @format */
 
-import { createImage } from "@gluestack-ui/core/image/creator";
-import type { VariantProps } from "@gluestack-ui/utils/nativewind-utils";
-import { tva } from "@gluestack-ui/utils/nativewind-utils";
-import { Image as EXImage } from "expo-image";
-import { cssInterop } from "nativewind";
 import React from "react";
+import { createImage } from "@gluestack-ui/image";
+import { Image as EXImage } from "expo-image";
+import { tva } from "@gluestack-ui/nativewind-utils/tva";
+import type { VariantProps } from "@gluestack-ui/nativewind-utils";
+import { cssInterop } from "react-native-css-interop";
+
+cssInterop(EXImage, {
+	className: "style",
+});
 
 const imageStyle = tva({
 	base: "max-w-full",
@@ -25,29 +29,18 @@ const imageStyle = tva({
 });
 
 const UIImage = createImage({ Root: EXImage });
-cssInterop(UIImage, {
-	className: "style",
-});
 
-type BaseImageProps = SafeOmit<
-	VariantProps<typeof imageStyle> & React.ComponentProps<typeof UIImage>,
-	"ref"
-> & { ref?: React.Ref<EXImage> };
+type ImageProps = Prettify<
+	VariantProps<typeof imageStyle> &
+		RequireKeys<React.ComponentProps<typeof UIImage>, "alt"> & {
+			ref?: React.Ref<EXImage>;
+		}
+>;
 
-type ImageProps = Prettify<RequireKeys<BaseImageProps, "alt">>;
-
-const Image: React.FC<ImageProps> = ({
-	ref,
-	size = "md",
-	className,
-	...props
-}) => {
+const Image: React.FC<ImageProps> = ({ size = "md", className, ...props }) => {
 	return (
 		<UIImage
 			{...props}
-			ref={
-				ref as React.Ref<Omit<ImageProps, "source" | "alt">> // gluestack got this type incorrect
-			}
 			className={imageStyle({ size, class: className })}
 		/>
 	);
