@@ -4,7 +4,6 @@ import { Box } from "@/components/ui/box";
 import { Button, ButtonIcon } from "@/components/ui/button";
 import { Image, type ImageProps } from "@/components/ui/image";
 import { Text } from "@/components/ui/text";
-import { cn } from "@/lib/utils";
 import * as NavigationBar from "expo-navigation-bar";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -44,16 +43,14 @@ const ONBOARDING_STEPS = [
 	image: string;
 }[];
 
-interface OnboardingBannerProps {
+const ANIMATION_DURATION = 300;
+
+interface BannerProps {
 	index: number;
 	currentStepIndex: number;
 	image: ImageProps["source"];
 }
-const OnboardingBanner: React.FC<OnboardingBannerProps> = ({
-	index,
-	currentStepIndex,
-	image,
-}) => {
+const Banner: React.FC<BannerProps> = ({ index, currentStepIndex, image }) => {
 	const { width: screenWidth } = useWindowDimensions();
 	const imageStyle = useAnimatedStyle(() => {
 		// - Is 0 if active (e.g., 1-1=0).
@@ -63,10 +60,14 @@ const OnboardingBanner: React.FC<OnboardingBannerProps> = ({
 
 		return {
 			opacity: withTiming(index === currentStepIndex ? 1 : 0, {
-				duration: 300,
+				duration: ANIMATION_DURATION,
 			}),
 			transform: [
-				{ translateX: withTiming(translateX, { duration: 300 }) },
+				{
+					translateX: withTiming(translateX, {
+						duration: ANIMATION_DURATION,
+					}),
+				},
 			],
 		};
 	});
@@ -80,6 +81,31 @@ const OnboardingBanner: React.FC<OnboardingBannerProps> = ({
 				size={"none"}
 			/>
 		</AnimatedBox>
+	);
+};
+
+interface StepDotProps {
+	index: number;
+	currentStepIndex: number;
+}
+const StepDot: React.FC<StepDotProps> = ({ index, currentStepIndex }) => {
+	const dotStyle = useAnimatedStyle(() => {
+		const isActive = index === currentStepIndex;
+		return {
+			width: withTiming(isActive ? 24 : 6, {
+				duration: ANIMATION_DURATION,
+			}),
+			opacity: withTiming(isActive ? 1 : 0.3, {
+				duration: ANIMATION_DURATION,
+			}),
+		};
+	});
+
+	return (
+		<AnimatedBox
+			style={dotStyle}
+			className="h-1.5 rounded-full bg-background-0"
+		/>
 	);
 };
 
@@ -123,7 +149,7 @@ export default function OnboardingScreen() {
 			<StatusBar style="light" />
 			<Box className="relative flex-1">
 				{ONBOARDING_STEPS.map((step, index) => (
-					<OnboardingBanner
+					<Banner
 						key={step.image}
 						index={index}
 						currentStepIndex={currentStepIndex}
@@ -141,17 +167,12 @@ export default function OnboardingScreen() {
 									{/* step dots */}
 									<Box className="flex-row items-center gap-2">
 										{ONBOARDING_STEPS.map((step, index) => (
-											<Box
+											<StepDot
 												key={step.image}
-												className={cn(
-													`h-1.5 rounded-full`,
-													index === currentStepIndex
-														? "w-6"
-														: "w-1.5",
-													index === currentStepIndex
-														? "bg-background-0"
-														: "bg-background-0/30",
-												)}
+												index={index}
+												currentStepIndex={
+													currentStepIndex
+												}
 											/>
 										))}
 									</Box>
