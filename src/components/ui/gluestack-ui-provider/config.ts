@@ -17,8 +17,8 @@ const lightThemeMap = {
 	"--color-primary-500": "37 99 235", // blue-600 #2563eb
 	"--color-primary-600": "29 78 216", // blue-700 #1d4ed8
 	"--color-primary-700": "30 64 175", // blue-800 #1e40af
-	"--color-primary-800": "23 37 84", // blue-900 #172554
-	"--color-primary-900": "12 16 42", // blue-950 #0c102a
+	"--color-primary-800": "30 58 138", // blue-900 #1e3a8a
+	"--color-primary-900": "23 37 84", // blue-950 #172554
 	"--color-primary-950": "1 1 8", // blue-dark #010108
 
 	/* Secondary - Tailwind slate */
