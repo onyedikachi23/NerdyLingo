@@ -7,7 +7,7 @@ import { Text } from "@/components/ui/text";
 import * as NavigationBar from "expo-navigation-bar";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ChevronRight, X } from "lucide-react-native";
+import { ChevronRight, CircleCheck, X } from "lucide-react-native";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -18,10 +18,13 @@ import {
 	GestureHandlerRootView,
 } from "react-native-gesture-handler";
 import Animated, {
+	FadeInLeft,
+	FadeOutRight,
 	useAnimatedStyle,
 	withTiming,
 } from "react-native-reanimated";
 import { runOnJS } from "react-native-worklets";
+import { cn } from "@/lib/utils";
 
 const AnimatedBox = Animated.createAnimatedComponent(Box);
 
@@ -154,16 +157,26 @@ const StepDescription = ({
 type SwipeDirection = "left" | "right";
 
 export default function OnboardingScreen() {
-	const [currentStepIndex, setCurrentStepIndex] = React.useState(0);
-
 	React.useEffect(() => {
 		void NavigationBar.setVisibilityAsync("hidden");
 
 		return () => void NavigationBar.setVisibilityAsync("visible");
 	}, []);
 
+	const [currentStepIndex, setCurrentStepIndex] = React.useState(0);
+
+	const exitOnboarding = () => {
+		alert("Exiting onboarding");
+	};
+
+	const isLastStep = currentStepIndex === ONBOARDING_STEPS.length - 1;
+
 	const adjustStepIndex = (direction: SwipeDirection) => {
 		if (direction === "right") {
+			if (isLastStep) {
+				exitOnboarding();
+				return;
+			}
 			setCurrentStepIndex((prevIndex) =>
 				Math.min(prevIndex + 1, ONBOARDING_STEPS.length - 1),
 			);
@@ -189,7 +202,10 @@ export default function OnboardingScreen() {
 		<>
 			<Stack.Screen options={{ headerShown: false }} />
 			<StatusBar style="light" />
-			<Box className="relative flex-1">
+			<AnimatedBox
+				className="relative flex-1"
+				entering={FadeInLeft}
+				exiting={FadeOutRight}>
 				{ONBOARDING_STEPS.map((step, index) => (
 					<StepBanner
 						key={step.image}
@@ -220,6 +236,8 @@ export default function OnboardingScreen() {
 									</Box>
 
 									<Button
+										onPress={exitOnboarding}
+										accessibilityLabel="Exit onboarding"
 										size="icon"
 										variant="secondary"
 										className="rounded-full border-0 bg-background-0/20 data-[active=true]:bg-background-0/50">
@@ -246,13 +264,26 @@ export default function OnboardingScreen() {
 
 									<Button
 										onPress={() => adjustStepIndex("right")}
+										accessibilityLabel={
+											isLastStep
+												? "Exit onboarding"
+												: "Next step"
+										}
 										size="lg"
 										className="aspect-[14/5] h-16 w-auto rounded-full border-0 bg-background-0 px-0.5 py-0.5 data-[active=true]:bg-background-100">
 										{/* inner border */}
 										<Box className="size-full items-center justify-center rounded-full border border-outline-950">
 											<ButtonIcon
-												as={ChevronRight}
-												className="text-typography-0"
+												as={
+													isLastStep
+														? CircleCheck
+														: ChevronRight
+												}
+												className={cn(
+													isLastStep
+														? "fill-typography-0 text-background-0"
+														: "text-typography-0",
+												)}
 											/>
 										</Box>
 									</Button>
@@ -261,7 +292,7 @@ export default function OnboardingScreen() {
 						</GestureDetector>
 					</GestureHandlerRootView>
 				</SafeAreaView>
-			</Box>
+			</AnimatedBox>
 		</>
 	);
 }
