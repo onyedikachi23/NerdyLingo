@@ -63,7 +63,7 @@ const StepBanner: React.FC<StepBannerProps> = ({
 		const translateX = (index - currentStepIndex) * screenWidth;
 
 		return {
-			opacity: withTiming(index === currentStepIndex ? 1 : 0, {
+			opacity: withTiming(index === currentStepIndex ? 1 : 0.5, {
 				duration: ANIMATION_DURATION,
 			}),
 			transform: [
