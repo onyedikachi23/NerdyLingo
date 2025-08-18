@@ -36,11 +36,11 @@ export default function RootLayout() {
 								...DefaultTheme.colors,
 								background: "transparent",
 							},
-					  }
+						}
 			}>
 			<GluestackUIProvider mode={colorScheme ?? "system"}>
 				<Box className="flex-1 bg-background-50">
-					<Stack />
+					<Stack screenOptions={{ headerShown: false }} />
 				</Box>
 			</GluestackUIProvider>
 		</ThemeProvider>
