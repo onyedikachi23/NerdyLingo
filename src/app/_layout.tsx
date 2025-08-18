@@ -15,6 +15,7 @@ import {
 } from "react-native-reanimated";
 import { useColorScheme } from "react-native";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import { Box } from "@/components/ui/box";
 
 configureReanimatedLogger({
 	level: ReanimatedLogLevel.warn,
@@ -23,11 +24,24 @@ configureReanimatedLogger({
 
 export default function RootLayout() {
 	const colorScheme = useColorScheme();
+
 	return (
 		<ThemeProvider
-			value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+			value={
+				colorScheme === "dark"
+					? DarkTheme
+					: {
+							...DefaultTheme,
+							colors: {
+								...DefaultTheme.colors,
+								background: "transparent",
+							},
+						}
+			}>
 			<GluestackUIProvider mode={colorScheme ?? "system"}>
-				<Stack />
+				<Box className="flex-1 bg-background-50">
+					<Stack screenOptions={{ headerShown: false }} />
+				</Box>
 			</GluestackUIProvider>
 		</ThemeProvider>
 	);
