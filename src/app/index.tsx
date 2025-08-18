@@ -2,7 +2,7 @@
 
 import { Box } from "@/components/ui/box";
 import { Button, ButtonIcon } from "@/components/ui/button";
-import { Image } from "@/components/ui/image";
+import { Image, type ImageProps } from "@/components/ui/image";
 import { Text } from "@/components/ui/text";
 import { cn } from "@/lib/utils";
 import * as NavigationBar from "expo-navigation-bar";
@@ -12,12 +12,19 @@ import { ChevronRight, X } from "lucide-react-native";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useWindowDimensions } from "react-native";
 import {
 	Gesture,
 	GestureDetector,
 	GestureHandlerRootView,
 } from "react-native-gesture-handler";
+import Animated, {
+	useAnimatedStyle,
+	withTiming,
+} from "react-native-reanimated";
 import { runOnJS } from "react-native-worklets";
+
+const AnimatedBox = Animated.createAnimatedComponent(Box);
 
 const ONBOARDING_STEPS = [
 	{
@@ -37,6 +44,47 @@ const ONBOARDING_STEPS = [
 	image: string;
 }[];
 
+interface OnboardingBannerProps {
+	index: number;
+	currentStepIndex: number;
+	image: ImageProps["source"];
+}
+const OnboardingBanner: React.FC<OnboardingBannerProps> = ({
+	index,
+	currentStepIndex,
+	image,
+}) => {
+	const { width: screenWidth } = useWindowDimensions();
+	const imageStyle = useAnimatedStyle(() => {
+		// - Is 0 if active (e.g., 1-1=0).
+		// - Is positive to move right offscreen (e.g., 2-1=1).
+		// - Is negative to move left offscreen (e.g., 0-1=-1).
+		const translateX = (index - currentStepIndex) * screenWidth;
+
+		return {
+			opacity: withTiming(index === currentStepIndex ? 1 : 0, {
+				duration: 300,
+			}),
+			transform: [
+				{ translateX: withTiming(translateX, { duration: 300 }) },
+			],
+		};
+	});
+
+	return (
+		<AnimatedBox style={imageStyle} className="absolute inset-0">
+			<Image
+				alt="onboarding image"
+				source={image}
+				className="absolute inset-0"
+				size={"none"}
+			/>
+		</AnimatedBox>
+	);
+};
+
+type SwipeDirection = "left" | "right";
+
 export default function OnboardingScreen() {
 	const [currentStepIndex, setCurrentStepIndex] = React.useState(0);
 
@@ -46,7 +94,7 @@ export default function OnboardingScreen() {
 		return () => void NavigationBar.setVisibilityAsync("visible");
 	}, []);
 
-	const adjustStepIndex = (direction: "left" | "right") => {
+	const adjustStepIndex = (direction: SwipeDirection) => {
 		if (direction === "right") {
 			setCurrentStepIndex((prevIndex) =>
 				Math.min(prevIndex + 1, ONBOARDING_STEPS.length - 1),
@@ -69,19 +117,20 @@ export default function OnboardingScreen() {
 			}
 		});
 
-	console.log("Current Step Index:", currentStepIndex);
-
 	return (
 		<>
 			<Stack.Screen options={{ headerShown: false }} />
 			<StatusBar style="light" />
 			<Box className="relative flex-1">
-				<Image
-					alt="onboarding image"
-					source={ONBOARDING_STEPS[currentStepIndex]?.image ?? {}}
-					className="absolute inset-0"
-					size={"none"}
-				/>
+				{ONBOARDING_STEPS.map((step, index) => (
+					<OnboardingBanner
+						key={step.image}
+						index={index}
+						currentStepIndex={currentStepIndex}
+						image={step.image}
+					/>
+				))}
+
 				<Box className="absolute inset-0 bg-background-950/30" />
 
 				<SafeAreaView className="flex-1">
