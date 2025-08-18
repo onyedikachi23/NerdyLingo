@@ -5,12 +5,12 @@ import { Button, ButtonIcon } from "@/components/ui/button";
 import { Image, type ImageProps } from "@/components/ui/image";
 import { Text } from "@/components/ui/text";
 import * as NavigationBar from "expo-navigation-bar";
-import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { ChevronRight, CircleCheck, X } from "lucide-react-native";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { cn } from "@/lib/utils";
 import { useWindowDimensions } from "react-native";
 import {
 	Gesture,
@@ -24,7 +24,8 @@ import Animated, {
 	withTiming,
 } from "react-native-reanimated";
 import { runOnJS } from "react-native-worklets";
-import { cn } from "@/lib/utils";
+import { useMMKVBoolean } from "react-native-mmkv";
+import { Redirect } from "expo-router";
 
 const AnimatedBox = Animated.createAnimatedComponent(Box);
 
@@ -156,18 +157,23 @@ const StepDescription = ({
 
 type SwipeDirection = "left" | "right";
 
+const HAS_COMPLETED_ONBOARDING_STORAGE_KEY = "has_completed_onboarding";
+
 export default function OnboardingScreen() {
 	React.useEffect(() => {
-		void NavigationBar.setVisibilityAsync("hidden");
+		void NavigationBar.setVisibilityAsync("hidden"); // May unpredictably reappear. Needs a more robust solution.
 
 		return () => void NavigationBar.setVisibilityAsync("visible");
 	}, []);
 
-	const [currentStepIndex, setCurrentStepIndex] = React.useState(0);
-
+	const [hasCompletedOnboarding, setHasCompletedOnboarding] = useMMKVBoolean(
+		HAS_COMPLETED_ONBOARDING_STORAGE_KEY,
+	);
 	const exitOnboarding = () => {
-		alert("Exiting onboarding");
+		setHasCompletedOnboarding(true);
 	};
+
+	const [currentStepIndex, setCurrentStepIndex] = React.useState(0);
 
 	const isLastStep = currentStepIndex === ONBOARDING_STEPS.length - 1;
 
@@ -180,9 +186,10 @@ export default function OnboardingScreen() {
 			setCurrentStepIndex((prevIndex) =>
 				Math.min(prevIndex + 1, ONBOARDING_STEPS.length - 1),
 			);
-		} else if (direction === "left") {
-			setCurrentStepIndex((prevIndex) => Math.max(prevIndex - 1, 0));
+			return;
 		}
+
+		setCurrentStepIndex((prevIndex) => Math.max(prevIndex - 1, 0));
 	};
 
 	const swipeGesture = Gesture.Pan()
@@ -198,9 +205,12 @@ export default function OnboardingScreen() {
 			}
 		});
 
+	if (hasCompletedOnboarding) {
+		return <Redirect href={"/(auth)/login"} />;
+	}
+
 	return (
 		<>
-			<Stack.Screen options={{ headerShown: false }} />
 			<StatusBar style="light" />
 			<AnimatedBox
 				className="relative flex-1"
@@ -222,7 +232,6 @@ export default function OnboardingScreen() {
 						<GestureDetector gesture={swipeGesture}>
 							<Box className="flex-1 justify-between px-4 pb-24 pt-10">
 								<Box className="flex-row items-center justify-between">
-									{/* step dots */}
 									<Box className="flex-row items-center gap-2">
 										{ONBOARDING_STEPS.map((step, index) => (
 											<StepDot
