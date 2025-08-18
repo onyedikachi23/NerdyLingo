@@ -45,12 +45,16 @@ const ONBOARDING_STEPS = [
 
 const ANIMATION_DURATION = 300;
 
-interface BannerProps {
+interface StepBannerProps {
 	index: number;
 	currentStepIndex: number;
 	image: ImageProps["source"];
 }
-const Banner: React.FC<BannerProps> = ({ index, currentStepIndex, image }) => {
+const StepBanner: React.FC<StepBannerProps> = ({
+	index,
+	currentStepIndex,
+	image,
+}) => {
 	const { width: screenWidth } = useWindowDimensions();
 	const imageStyle = useAnimatedStyle(() => {
 		// - Is 0 if active (e.g., 1-1=0).
@@ -109,6 +113,44 @@ const StepDot: React.FC<StepDotProps> = ({ index, currentStepIndex }) => {
 	);
 };
 
+interface StepDescriptionProps {
+	index: number;
+	currentStepIndex: number;
+	description: string;
+}
+const AnimatedText = Animated.createAnimatedComponent(Text);
+
+const StepDescription = ({
+	index,
+	currentStepIndex,
+	description,
+}: StepDescriptionProps) => {
+	const textStyle = useAnimatedStyle(() => {
+		const isActive = index === currentStepIndex;
+
+		const translateY = withTiming(isActive ? 0 : 20, {
+			duration: ANIMATION_DURATION,
+		});
+
+		// Fades in with a subtle upward movement
+		return {
+			opacity: withTiming(isActive ? 1 : 0, {
+				duration: ANIMATION_DURATION,
+			}),
+			transform: [{ translateY }],
+		};
+	});
+
+	return (
+		<AnimatedText
+			style={textStyle}
+			className="absolute max-w-[80%] text-center font-semibold"
+			numberOfLines={2}>
+			{description}
+		</AnimatedText>
+	);
+};
+
 type SwipeDirection = "left" | "right";
 
 export default function OnboardingScreen() {
@@ -149,7 +191,7 @@ export default function OnboardingScreen() {
 			<StatusBar style="light" />
 			<Box className="relative flex-1">
 				{ONBOARDING_STEPS.map((step, index) => (
-					<Banner
+					<StepBanner
 						key={step.image}
 						index={index}
 						currentStepIndex={currentStepIndex}
@@ -189,14 +231,18 @@ export default function OnboardingScreen() {
 								</Box>
 
 								<Box className="items-center justify-center gap-8">
-									<Text
-										className="max-w-[80%] text-center font-semibold"
-										numberOfLines={2}>
-										{
-											ONBOARDING_STEPS[currentStepIndex]
-												?.description
-										}
-									</Text>
+									<Box className="relative h-12 w-full items-center justify-center">
+										{ONBOARDING_STEPS.map((step, index) => (
+											<StepDescription
+												key={step.description}
+												index={index}
+												currentStepIndex={
+													currentStepIndex
+												}
+												description={step.description}
+											/>
+										))}
+									</Box>
 
 									<Button
 										onPress={() => adjustStepIndex("right")}
