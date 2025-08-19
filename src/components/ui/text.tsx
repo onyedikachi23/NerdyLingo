@@ -8,12 +8,9 @@ import { Text as RNText, type TextProps as RNTextProps } from "react-native";
 import { PropSlot, type AsChildProps } from "./slot";
 
 const textStyle = tva({
-	base: `text-typography-700 font-body`,
+	base: "text-typography-700 font-body",
 
 	variants: {
-		isTruncated: {
-			true: "web:truncate",
-		},
 		bold: {
 			true: "font-bold",
 		},
@@ -58,7 +55,6 @@ type TextProps = AsChildProps<BaseTextProps>;
 
 const Text: React.FC<TextProps> = ({
 	className,
-	isTruncated,
 	bold,
 	underline,
 	strikeThrough,
@@ -74,7 +70,6 @@ const Text: React.FC<TextProps> = ({
 		<Comp
 			{...props}
 			className={textStyle({
-				isTruncated,
 				bold,
 				underline,
 				strikeThrough,
