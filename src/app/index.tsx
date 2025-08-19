@@ -147,7 +147,7 @@ const StepDescription = ({
 	return (
 		<AnimatedText
 			style={textStyle}
-			className="absolute max-w-[80%] text-center font-semibold"
+			className="absolute max-w-[80%] text-center font-semibold text-typography-0"
 			numberOfLines={2}>
 			{description}
 		</AnimatedText>
@@ -247,7 +247,7 @@ export default function OnboardingScreen() {
 									className="rounded-full border-0 bg-background-0/20 data-[active=true]:bg-background-0/50">
 									<ButtonIcon
 										as={X}
-										className="text-typography-950"
+										className="text-typography-0"
 									/>
 								</Button>
 							</Box>
@@ -283,8 +283,8 @@ export default function OnboardingScreen() {
 											}
 											className={cn(
 												isLastStep
-													? "fill-typography-0 text-background-0"
-													: "text-typography-0",
+													? "fill-typography-900 text-background-0"
+													: "text-typography-900",
 											)}
 										/>
 									</Box>
