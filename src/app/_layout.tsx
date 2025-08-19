@@ -41,7 +41,7 @@ export default function RootLayout() {
 			}>
 			<GluestackUIProvider mode={colorScheme ?? "system"}>
 				<Box className="flex-1 bg-background-0">
-					<StatusBar style="light" />
+					<StatusBar style="dark" />
 					<Stack screenOptions={{ headerShown: false }} />
 				</Box>
 			</GluestackUIProvider>
