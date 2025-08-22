@@ -87,15 +87,13 @@ export default function SignupScreen() {
 						By continuing you confirm that you’ve read and accepted
 						out{" "}
 						<Link
-							// TODO: Update href to point to the actual terms
-							href={"#"}
+							href={"/(legal)/terms-of-service"}
 							className="text-primary-500 underline-offset-4 active:underline">
 							Terms
 						</Link>{" "}
 						and{" "}
 						<Link
-							// TODO: Update href to point to the actual privacy policy
-							href={"#"}
+							href={"/(legal)/privacy-policy"}
 							className="text-primary-500 underline-offset-4 active:underline">
 							Privacy Policy
 						</Link>
