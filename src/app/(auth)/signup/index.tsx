@@ -10,11 +10,7 @@ import Animated, { FadeInLeft, FadeOutRight } from "react-native-reanimated";
 
 const AnimatedBox = Animated.createAnimatedComponent(Box);
 
-interface SignupOptionsProps {
-	onSignupWithEmail: () => void;
-}
-
-export const SignupOptions = ({ onSignupWithEmail }: SignupOptionsProps) => {
+export default function SignupOptions() {
 	return (
 		<AnimatedBox
 			className="flex-1 gap-12"
@@ -54,11 +50,11 @@ export const SignupOptions = ({ onSignupWithEmail }: SignupOptionsProps) => {
 					))}
 				</ButtonGroup>
 
-				<Button
-					onPress={onSignupWithEmail}
-					className="aspect-[23/4] h-auto max-h-16 rounded-full border-0 bg-background-100 data-[active=true]:bg-background-200">
-					<ButtonText size="lg">Sign up with Email</ButtonText>
-				</Button>
+				<Link href={"/signup/email"} asChild>
+					<Button className="aspect-[23/4] h-auto max-h-16 rounded-full border-0 bg-background-100 data-[active=true]:bg-background-200">
+						<ButtonText size="lg">Sign up with Email</ButtonText>
+					</Button>
+				</Link>
 			</ButtonGroup>
 
 			<Box className="items-center justify-center gap-1">
@@ -88,4 +84,4 @@ export const SignupOptions = ({ onSignupWithEmail }: SignupOptionsProps) => {
 			</Text>
 		</AnimatedBox>
 	);
-};
+}

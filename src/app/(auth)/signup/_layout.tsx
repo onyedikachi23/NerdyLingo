@@ -1,10 +1,8 @@
 /** @format */
 
-import { EmailSignup } from "@/app-colocation/auth/signup/components/email-signup";
-import { SignupOptions } from "@/app-colocation/auth/signup/components/signup-options";
 import { Box } from "@/components/ui/box";
 import { Image } from "@/components/ui/image";
-import React from "react";
+import { Stack } from "expo-router";
 import { ScrollView } from "react-native";
 import Animated, { FadeInLeft, FadeOutRight } from "react-native-reanimated";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -12,7 +10,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 const AnimatedBox = Animated.createAnimatedComponent(Box);
 
 export default function SignupScreen() {
-	const [isSigningUpByEmail, setIsSigningUpByEmail] = React.useState(false);
 	return (
 		<AnimatedBox
 			className="flex-1"
@@ -31,15 +28,19 @@ export default function SignupScreen() {
 						size={"2xl"}
 					/>
 
-					{isSigningUpByEmail ? (
-						<EmailSignup />
-					) : (
-						<SignupOptions
-							onSignupWithEmail={() =>
-								setIsSigningUpByEmail(true)
-							}
+					<Stack
+						screenOptions={{
+							headerShown: false,
+						}}>
+						<Stack.Screen
+							name="index"
+							options={{ title: "Sign up options" }}
 						/>
-					)}
+						<Stack.Screen
+							name="details"
+							options={{ title: "Sign up with Email" }}
+						/>
+					</Stack>
 				</ScrollView>
 			</SafeAreaView>
 		</AnimatedBox>
