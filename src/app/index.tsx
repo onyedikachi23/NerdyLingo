@@ -25,6 +25,12 @@ import Animated, {
 	withTiming,
 } from "react-native-reanimated";
 import { runOnJS } from "react-native-worklets";
+import { StatusBar } from "expo-status-bar";
+import {
+	FlowButton,
+	FlowButtonIcon,
+	FlowButtonRing,
+} from "@/components/ui-common/flow-button";
 
 const AnimatedBox = Animated.createAnimatedComponent(Box);
 
@@ -209,91 +215,99 @@ export default function OnboardingScreen() {
 	}
 
 	return (
-		<AnimatedBox
-			className="relative flex-1"
-			entering={FadeInLeft}
-			exiting={FadeOutRight}>
-			{ONBOARDING_STEPS.map((step, index) => (
-				<StepBanner
-					key={step.image}
-					index={index}
-					currentStepIndex={currentStepIndex}
-					image={step.image}
-				/>
-			))}
+		<>
+			{/* The banner images drawing below the StatusBar causes contrast issues */}
+			<StatusBar style="light" />
 
-			<Box className="absolute inset-0 bg-background-950/30" />
+			<AnimatedBox
+				className="relative flex-1"
+				entering={FadeInLeft}
+				exiting={FadeOutRight}>
+				{ONBOARDING_STEPS.map((step, index) => (
+					<StepBanner
+						key={step.image}
+						index={index}
+						currentStepIndex={currentStepIndex}
+						image={step.image}
+					/>
+				))}
 
-			<SafeAreaView className="flex-1">
-				<GestureHandlerRootView>
-					<GestureDetector gesture={swipeGesture}>
-						<Box className="flex-1 justify-between px-4 pb-24 pt-10">
-							<Box className="flex-row items-center justify-between">
-								<Box className="flex-row items-center gap-2">
-									{ONBOARDING_STEPS.map((step, index) => (
-										<StepDot
-											key={step.image}
-											index={index}
-											currentStepIndex={currentStepIndex}
-										/>
-									))}
-								</Box>
+				<Box className="absolute inset-0 bg-background-950/30" />
 
-								<Button
-									onPress={exitOnboarding}
-									accessibilityLabel="Exit onboarding"
-									size="icon"
-									variant="secondary"
-									className="rounded-full border-0 bg-background-0/20 data-[active=true]:bg-background-0/50">
-									<ButtonIcon
-										as={X}
-										className="text-typography-0"
-									/>
-								</Button>
-							</Box>
-
-							<Box className="items-center justify-center gap-8">
-								<Box className="relative h-12 w-full items-center justify-center">
-									{ONBOARDING_STEPS.map((step, index) => (
-										<StepDescription
-											key={step.description}
-											index={index}
-											currentStepIndex={currentStepIndex}
-											description={step.description}
-										/>
-									))}
-								</Box>
-
-								<Button
-									onPress={() => adjustStepIndex("right")}
-									accessibilityLabel={
-										isLastStep
-											? "Exit onboarding"
-											: "Next step"
-									}
-									size="lg"
-									className="aspect-[14/5] h-16 w-auto rounded-full border-0 bg-background-0 px-0.5 py-0.5 data-[active=true]:bg-background-100">
-									{/* inner border */}
-									<Box className="size-full items-center justify-center rounded-full border border-outline-950">
-										<ButtonIcon
-											as={
-												isLastStep
-													? CircleCheck
-													: ChevronRight
-											}
-											className={cn(
-												isLastStep
-													? "fill-typography-900 text-background-0"
-													: "text-typography-900",
-											)}
-										/>
+				<SafeAreaView className="flex-1">
+					<GestureHandlerRootView>
+						<GestureDetector gesture={swipeGesture}>
+							<Box className="flex-1 justify-between px-4 pb-24 pt-10">
+								<Box className="flex-row items-center justify-between">
+									<Box className="flex-row items-center gap-2">
+										{ONBOARDING_STEPS.map((step, index) => (
+											<StepDot
+												key={step.image}
+												index={index}
+												currentStepIndex={
+													currentStepIndex
+												}
+											/>
+										))}
 									</Box>
-								</Button>
+
+									<Button
+										onPress={exitOnboarding}
+										accessibilityLabel="Exit onboarding"
+										size="icon"
+										variant="secondary"
+										className="rounded-full border-0 bg-background-0/20 data-[active=true]:bg-background-0/50">
+										<ButtonIcon
+											as={X}
+											className="text-typography-0"
+										/>
+									</Button>
+								</Box>
+
+								<Box className="items-center justify-center gap-8">
+									<Box className="relative h-12 w-full items-center justify-center">
+										{ONBOARDING_STEPS.map((step, index) => (
+											<StepDescription
+												key={step.description}
+												index={index}
+												currentStepIndex={
+													currentStepIndex
+												}
+												description={step.description}
+											/>
+										))}
+									</Box>
+
+									<FlowButton
+										onPress={() => adjustStepIndex("right")}
+										accessibilityLabel={
+											isLastStep
+												? "Exit onboarding"
+												: "Next step"
+										}
+										className="bg-background-0 data-[active=true]:bg-background-100">
+										{/* inner border */}
+										<FlowButtonRing className="border-outline-950">
+											<FlowButtonIcon
+												as={
+													isLastStep
+														? CircleCheck
+														: ChevronRight
+												}
+												className={cn(
+													isLastStep
+														? "fill-typography-900 text-background-0"
+														: "text-typography-900",
+												)}
+											/>
+										</FlowButtonRing>
+									</FlowButton>
+								</Box>
 							</Box>
-						</Box>
-					</GestureDetector>
-				</GestureHandlerRootView>
-			</SafeAreaView>
-		</AnimatedBox>
+						</GestureDetector>
+					</GestureHandlerRootView>
+				</SafeAreaView>
+			</AnimatedBox>
+		</>
 	);
 }
