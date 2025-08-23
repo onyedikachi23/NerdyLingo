@@ -52,7 +52,11 @@ export default function SignupOptions() {
 
 				<Link href={"/signup/email"} asChild>
 					<Button className="aspect-[23/4] h-auto max-h-16 rounded-full border-0 bg-background-100 data-[active=true]:bg-background-200">
-						<ButtonText size="lg">Sign up with Email</ButtonText>
+						<ButtonText
+							size="lg"
+							className="text-typography-950 data-[active=true]:text-typography-950">
+							Sign up with Email
+						</ButtonText>
 					</Button>
 				</Link>
 			</ButtonGroup>
