@@ -65,8 +65,7 @@ const buttonTextStyle = tva({
 	base: "font-medium",
 	parentVariants: {
 		variant: {
-			default:
-				"text-typography-950 data-[active=true]:text-typography-950",
+			default: "text-typography-0 data-[active=true]:text-typography-0",
 			destructive:
 				"text-typography-50 data-[active=true]:text-typography-50",
 			secondary:
@@ -88,7 +87,7 @@ const buttonIconStyle = tva({
 	base: "",
 	parentVariants: {
 		variant: {
-			default: "text-typography-950",
+			default: "text-typography-0",
 			destructive: "text-typography-50",
 			secondary: "text-typography-800",
 			outline: "text-typography-600 data-[active=true]:text-primary-500",
@@ -198,7 +197,7 @@ type ButtonIconProps = Prettify<
 const ButtonIcon: React.FC<ButtonIconProps> = ({
 	className,
 	size,
-	fill = "transparent",
+	fill = "none",
 	...props
 }) => {
 	const { variant: parentVariant, size: parentSize } = useStyleContext(
