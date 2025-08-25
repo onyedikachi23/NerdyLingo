@@ -103,6 +103,20 @@ const buttonIconStyle = tva({
 	},
 });
 
+const buttonSpinnerStyle = tva({
+	base: "",
+	parentVariants: {
+		variant: {
+			default: "text-typography-0",
+			destructive: "text-typography-50",
+			secondary: "text-typography-800",
+			outline: "text-typography-600 ",
+			ghost: "text-typography-600 ",
+			link: "text-primary-500 ",
+		},
+	},
+});
+
 const buttonGroupStyle = tva({
 	base: "",
 	variants: {
@@ -181,7 +195,33 @@ const ButtonText: React.FC<ButtonTextProps> = ({
 	);
 };
 
-const ButtonSpinner = UIButton.Spinner;
+type ButtonSpinnerProps = Prettify<
+	React.ComponentProps<typeof UIButton.Spinner> &
+		VariantProps<typeof buttonSpinnerStyle>
+>;
+
+const ButtonSpinner: React.FC<ButtonSpinnerProps> = ({
+	className,
+	variant,
+	...props
+}) => {
+	const { variant: parentVariant } = useStyleContext(SCOPE) as VariantProps<
+		typeof buttonSpinnerStyle
+	>;
+
+	return (
+		<UIButton.Spinner
+			{...props}
+			className={buttonTextStyle({
+				parentVariants: {
+					variant: parentVariant,
+				},
+				variant,
+				class: className,
+			})}
+		/>
+	);
+};
 
 type BaseButtonIconProps = React.ComponentProps<typeof UIButton.Icon> &
 	VariantProps<typeof buttonIconStyle> & {
@@ -268,4 +308,10 @@ const ButtonGroup: React.FC<ButtonGroupProps> = ({
 
 export { Button, ButtonText, ButtonSpinner, ButtonIcon, ButtonGroup };
 
-export type { ButtonProps, ButtonTextProps, ButtonIconProps, ButtonGroupProps };
+export type {
+	ButtonProps,
+	ButtonTextProps,
+	ButtonSpinnerProps,
+	ButtonIconProps,
+	ButtonGroupProps,
+};
