@@ -5,26 +5,29 @@ import { Button, ButtonIcon } from "@/components/ui/button";
 import { Image, type ImageProps } from "@/components/ui/image";
 import { Text } from "@/components/ui/text";
 import * as NavigationBar from "expo-navigation-bar";
-import { StatusBar } from "expo-status-bar";
 import { ChevronRight, CircleCheck, X } from "lucide-react-native";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import {
+	FlowButton,
+	FlowButtonIcon,
+	FlowButtonRing,
+} from "@/components/ui-common/flow-button";
 import { cn } from "@/lib/utils";
+import { StatusBar } from "expo-status-bar";
 import { useWindowDimensions } from "react-native";
 import {
 	Gesture,
 	GestureDetector,
 	GestureHandlerRootView,
 } from "react-native-gesture-handler";
+import { useMMKVBoolean } from "react-native-mmkv";
 import Animated, {
-	FadeInLeft,
-	FadeOutRight,
 	useAnimatedStyle,
 	withTiming,
 } from "react-native-reanimated";
-import { runOnJS } from "react-native-worklets";
-import { useMMKVBoolean } from "react-native-mmkv";
+import { scheduleOnRN } from "react-native-worklets";
 import { Redirect } from "expo-router";
 
 const AnimatedBox = Animated.createAnimatedComponent(Box);
@@ -59,6 +62,7 @@ const StepBanner: React.FC<StepBannerProps> = ({
 	currentStepIndex,
 	image,
 }) => {
+	const isActive = index === currentStepIndex;
 	const { width: screenWidth } = useWindowDimensions();
 	const imageStyle = useAnimatedStyle(() => {
 		// - Is 0 if active (e.g., 1-1=0).
@@ -67,7 +71,7 @@ const StepBanner: React.FC<StepBannerProps> = ({
 		const translateX = (index - currentStepIndex) * screenWidth;
 
 		return {
-			opacity: withTiming(index === currentStepIndex ? 1 : 0.5, {
+			opacity: withTiming(isActive ? 1 : 0.5, {
 				duration: ANIMATION_DURATION,
 			}),
 			transform: [
@@ -83,7 +87,7 @@ const StepBanner: React.FC<StepBannerProps> = ({
 	return (
 		<AnimatedBox style={imageStyle} className="absolute inset-0">
 			<Image
-				alt="onboarding image"
+				accessibilityLabel={`Image banner for: ${isActive ? "current step" : `step ${index + 1}`}`}
 				source={image}
 				className="absolute inset-0"
 				size={"none"}
@@ -148,7 +152,7 @@ const StepDescription = ({
 	return (
 		<AnimatedText
 			style={textStyle}
-			className="absolute max-w-[80%] text-center font-semibold"
+			className="absolute max-w-[80%] text-center font-semibold text-typography-0"
 			numberOfLines={2}>
 			{description}
 		</AnimatedText>
@@ -199,9 +203,9 @@ export default function OnboardingScreen() {
 		.failOffsetY([-10, 10])
 		.onEnd((event) => {
 			if (event.translationX > 0) {
-				runOnJS(adjustStepIndex)("left");
+				scheduleOnRN(adjustStepIndex, "left");
 			} else if (event.translationX < 0) {
-				runOnJS(adjustStepIndex)("right");
+				scheduleOnRN(adjustStepIndex, "right");
 			}
 		});
 
@@ -211,11 +215,10 @@ export default function OnboardingScreen() {
 
 	return (
 		<>
+			{/* The banner images drawing below the StatusBar causes contrast issues */}
 			<StatusBar style="light" />
-			<AnimatedBox
-				className="relative flex-1"
-				entering={FadeInLeft}
-				exiting={FadeOutRight}>
+
+			<Box className="relative flex-1">
 				{ONBOARDING_STEPS.map((step, index) => (
 					<StepBanner
 						key={step.image}
@@ -252,7 +255,7 @@ export default function OnboardingScreen() {
 										className="rounded-full border-0 bg-background-0/20 data-[active=true]:bg-background-0/50">
 										<ButtonIcon
 											as={X}
-											className="text-typography-950"
+											className="text-typography-0"
 										/>
 									</Button>
 								</Box>
@@ -271,18 +274,17 @@ export default function OnboardingScreen() {
 										))}
 									</Box>
 
-									<Button
+									<FlowButton
 										onPress={() => adjustStepIndex("right")}
 										accessibilityLabel={
 											isLastStep
 												? "Exit onboarding"
 												: "Next step"
 										}
-										size="lg"
-										className="aspect-[14/5] h-16 w-auto rounded-full border-0 bg-background-0 px-0.5 py-0.5 data-[active=true]:bg-background-100">
+										className="bg-background-0 data-[active=true]:bg-background-100">
 										{/* inner border */}
-										<Box className="size-full items-center justify-center rounded-full border border-outline-950">
-											<ButtonIcon
+										<FlowButtonRing className="border-outline-950">
+											<FlowButtonIcon
 												as={
 													isLastStep
 														? CircleCheck
@@ -290,18 +292,18 @@ export default function OnboardingScreen() {
 												}
 												className={cn(
 													isLastStep
-														? "fill-typography-0 text-background-0"
-														: "text-typography-0",
+														? "fill-typography-900 text-background-0"
+														: "text-typography-900",
 												)}
 											/>
-										</Box>
-									</Button>
+										</FlowButtonRing>
+									</FlowButton>
 								</Box>
 							</Box>
 						</GestureDetector>
 					</GestureHandlerRootView>
 				</SafeAreaView>
-			</AnimatedBox>
+			</Box>
 		</>
 	);
 }

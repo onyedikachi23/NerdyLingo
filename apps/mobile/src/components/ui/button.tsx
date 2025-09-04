@@ -65,8 +65,7 @@ const buttonTextStyle = tva({
 	base: "font-medium",
 	parentVariants: {
 		variant: {
-			default:
-				"text-typography-950 data-[active=true]:text-typography-950",
+			default: "text-typography-0 data-[active=true]:text-typography-0",
 			destructive:
 				"text-typography-50 data-[active=true]:text-typography-50",
 			secondary:
@@ -88,7 +87,7 @@ const buttonIconStyle = tva({
 	base: "",
 	parentVariants: {
 		variant: {
-			default: "text-typography-950",
+			default: "text-typography-0",
 			destructive: "text-typography-50",
 			secondary: "text-typography-800",
 			outline: "text-typography-600 data-[active=true]:text-primary-500",
@@ -100,6 +99,20 @@ const buttonIconStyle = tva({
 			sm: "h-3.5 w-3.5",
 			lg: "h-[18px] w-[18px]",
 			icon: "h-5 w-5",
+		},
+	},
+});
+
+const buttonSpinnerStyle = tva({
+	base: "",
+	parentVariants: {
+		variant: {
+			default: "text-typography-0",
+			destructive: "text-typography-50",
+			secondary: "text-typography-800",
+			outline: "text-typography-600 data-[active=true]:text-primary-500",
+			ghost: "text-typography-600 data-[active=true]:text-primary-500",
+			link: "text-primary-500 data-[active=true]:text-primary-600",
 		},
 	},
 });
@@ -182,7 +195,33 @@ const ButtonText: React.FC<ButtonTextProps> = ({
 	);
 };
 
-const ButtonSpinner = UIButton.Spinner;
+type ButtonSpinnerProps = Prettify<
+	React.ComponentProps<typeof UIButton.Spinner> &
+		VariantProps<typeof buttonSpinnerStyle>
+>;
+
+const ButtonSpinner: React.FC<ButtonSpinnerProps> = ({
+	className,
+	variant,
+	...props
+}) => {
+	const { variant: parentVariant } = useStyleContext(SCOPE) as VariantProps<
+		typeof buttonSpinnerStyle
+	>;
+
+	return (
+		<UIButton.Spinner
+			{...props}
+			className={buttonSpinnerStyle({
+				parentVariants: {
+					variant: parentVariant,
+				},
+				variant,
+				class: className,
+			})}
+		/>
+	);
+};
 
 type BaseButtonIconProps = React.ComponentProps<typeof UIButton.Icon> &
 	VariantProps<typeof buttonIconStyle> & {
@@ -198,7 +237,7 @@ type ButtonIconProps = Prettify<
 const ButtonIcon: React.FC<ButtonIconProps> = ({
 	className,
 	size,
-	fill = "transparent",
+	fill = "none",
 	...props
 }) => {
 	const { variant: parentVariant, size: parentSize } = useStyleContext(
@@ -269,4 +308,10 @@ const ButtonGroup: React.FC<ButtonGroupProps> = ({
 
 export { Button, ButtonText, ButtonSpinner, ButtonIcon, ButtonGroup };
 
-export type { ButtonProps, ButtonTextProps, ButtonIconProps, ButtonGroupProps };
+export type {
+	ButtonProps,
+	ButtonTextProps,
+	ButtonSpinnerProps,
+	ButtonIconProps,
+	ButtonGroupProps,
+};

@@ -17,8 +17,8 @@ const lightThemeMap = {
 	"--color-primary-500": "37 99 235", // blue-600 #2563eb
 	"--color-primary-600": "29 78 216", // blue-700 #1d4ed8
 	"--color-primary-700": "30 64 175", // blue-800 #1e40af
-	"--color-primary-800": "23 37 84", // blue-900 #172554
-	"--color-primary-900": "12 16 42", // blue-950 #0c102a
+	"--color-primary-800": "30 58 138", // blue-900 #1e3a8a
+	"--color-primary-900": "23 37 84", // blue-950 #172554
 	"--color-primary-950": "1 1 8", // blue-dark #010108
 
 	/* Secondary - Tailwind slate */
@@ -106,18 +106,18 @@ const lightThemeMap = {
 	"--color-info-950": "7 14 28", // sky-950 #070e1c
 
 	/* Typography - Tailwind slate */
-	"--color-typography-0": "1 1 8", // blue-dark #010108
-	"--color-typography-50": "2 6 23", // slate-950 #020617
-	"--color-typography-100": "15 23 42", // slate-900 #0f172a
-	"--color-typography-200": "30 41 59", // slate-800 #1e293b
-	"--color-typography-300": "51 65 85", // slate-700 #334155
-	"--color-typography-400": "71 85 105", // slate-600 #475569
-	"--color-typography-500": "100 116 139", // slate-500 #64748b
-	"--color-typography-600": "148 163 184", // slate-400 #94a3b8
-	"--color-typography-700": "203 213 225", // slate-300 #cbd5e1
-	"--color-typography-800": "226 232 240", // slate-200 #e2e8f0
-	"--color-typography-900": "241 245 249", // slate-100 #f1f5f9
-	"--color-typography-950": "248 250 252", // slate-50 #f8fafc
+	"--color-typography-0": "248 250 252", // slate-50 #f8fafc
+	"--color-typography-50": "241 245 249", // slate-100 #f1f5f9
+	"--color-typography-100": "226 232 240", // slate-200 #e2e8f0
+	"--color-typography-200": "203 213 225", // slate-300 #cbd5e1
+	"--color-typography-300": "148 163 184", // slate-400 #94a3b8
+	"--color-typography-400": "100 116 139", // slate-500 #64748b
+	"--color-typography-500": "71 85 105", // slate-600 #475569
+	"--color-typography-600": "51 65 85", // slate-700 #334155
+	"--color-typography-700": "30 41 59", // slate-800 #1e293b
+	"--color-typography-800": "15 23 42", // slate-900 #0f172a
+	"--color-typography-900": "2 6 23", // slate-950 #020617
+	"--color-typography-950": "1 1 8", // blue-dark #010108
 
 	/* Outline - Tailwind slate */
 	"--color-outline-0": "248 250 252", // slate-50 #f8fafc

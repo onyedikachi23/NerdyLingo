@@ -32,7 +32,10 @@ const UIImage = createImage({ Root: EXImage });
 
 type ImageProps = Prettify<
 	VariantProps<typeof imageStyle> &
-		RequireKeys<React.ComponentProps<typeof UIImage>, "alt"> & {
+		RequireKeys<
+			React.ComponentProps<typeof UIImage>,
+			"accessibilityLabel"
+		> & {
 			ref?: React.Ref<EXImage>;
 		}
 >;
@@ -41,6 +44,7 @@ const Image: React.FC<ImageProps> = ({ size = "md", className, ...props }) => {
 	return (
 		<UIImage
 			{...props}
+			alt={props.alt ?? props.accessibilityLabel}
 			className={imageStyle({ size, class: className })}
 		/>
 	);

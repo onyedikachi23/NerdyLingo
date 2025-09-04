@@ -1,24 +1,6 @@
 {
-	"extends": "expo/tsconfig.base",
+	"extends": ["@repo/typescript-config/react.json", "expo/tsconfig.base"],
 	"compilerOptions": {
-		/* Linting */
-		"strict": true,
-		"noUnusedLocals": true,
-		"noUnusedParameters": true,
-		"noFallthroughCasesInSwitch": true,
-		"noImplicitAny": true,
-		"noUncheckedIndexedAccess": true,
-		"strictNullChecks": true,
-
-		"verbatimModuleSyntax": true,
-		"erasableSyntaxOnly": true,
-		"isolatedModules": true,
-		"noUncheckedSideEffectImports": true,
-		"moduleDetection": "force",
-		"skipLibCheck": true,
-
-		"jsx": "react-jsx",
-
 		"paths": {
 			"@/*": ["./src/*"],
 			"tailwind.config": ["./tailwind.config.js"]
