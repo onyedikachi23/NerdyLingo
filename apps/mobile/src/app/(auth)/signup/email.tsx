@@ -10,6 +10,11 @@ import {
 	AuthFormInputField,
 	type FieldBuilder,
 } from "@/app-colocation/auth/components/email-form";
+import { useSignup } from "@/app-colocation/auth/hooks/use-signup";
+import {
+	EmailSignupFieldsSchema,
+	type EmailSignupForm,
+} from "@/app-colocation/auth/signup/form-schema";
 import { isFieldRequired } from "@/app-colocation/auth/utils";
 import {
 	FlowButton,
@@ -20,26 +25,6 @@ import { ButtonSpinner } from "@/components/ui/button";
 import { FormControl } from "@/components/ui/form-control";
 import { useForm } from "@tanstack/react-form";
 import { ChevronRight } from "lucide-react-native";
-import z from "zod";
-
-const StrongPasswordSchema = z
-	.string()
-	.min(8, "At least 8 characters long")
-	.regex(/[a-z]/, "At least one lowercase letter")
-	.regex(/[A-Z]/, "At least one uppercase letter")
-	.regex(/\d/, "At least one number")
-	.regex(/[^a-zA-Z0-9\s]/, "At least one special character");
-
-const fieldsSchema = {
-	name: z.string().min(1, {
-		error: "Name is required",
-	}),
-	email: z.email(),
-	password: StrongPasswordSchema,
-	confirmPassword: z.string(), // Passwords match validation will be done at field level
-} satisfies z.ZodRawShape;
-
-type EmailSignupForm = z.infer<z.ZodObject<typeof fieldsSchema>>;
 
 const fieldsBuilder = [
 	{
@@ -67,6 +52,7 @@ const fieldsBuilder = [
 ] satisfies FieldBuilder<EmailSignupForm>[];
 
 export default function EmailSignup() {
+	const { mutate: signup, isPending: isApiSubmitting } = useSignup();
 	const form = useForm({
 		defaultValues: {
 			name: "",
@@ -74,6 +60,7 @@ export default function EmailSignup() {
 			password: "",
 			confirmPassword: "",
 		} satisfies EmailSignupForm,
+		onSubmit: ({ value }) => signup(value),
 	});
 
 	return (
@@ -83,6 +70,8 @@ export default function EmailSignup() {
 			<AuthFormFieldsContainer>
 				{fieldsBuilder.map(
 					({ name, label, placeholder, type }, index) => {
+						const isFirstInput = index === 0;
+						const isLastInput = index === fieldsBuilder.length - 1;
 						return (
 							<form.Field
 								key={name}
@@ -95,7 +84,9 @@ export default function EmailSignup() {
 									onBlur: ({ value, fieldApi }) => {
 										const fieldValidator =
 											name === "confirmPassword"
-												? fieldsSchema[name].refine(
+												? EmailSignupFieldsSchema[
+														name
+													].refine(
 														(data) =>
 															data ===
 															fieldApi.form.getFieldValue(
@@ -105,7 +96,7 @@ export default function EmailSignup() {
 															error: "Passwords do not match",
 														},
 													)
-												: fieldsSchema[name];
+												: EmailSignupFieldsSchema[name];
 
 										const validationResult =
 											fieldValidator.safeParse(value);
@@ -120,7 +111,7 @@ export default function EmailSignup() {
 									<FormControl
 										isInvalid={!field.state.meta.isValid}
 										isRequired={isFieldRequired(
-											fieldsSchema[name],
+											EmailSignupFieldsSchema[name],
 										)}>
 										<AuthFormControlLabel>
 											{label}
@@ -136,7 +127,12 @@ export default function EmailSignup() {
 													field.handleChange
 												} // for syncing changes to field state
 												type={type}
-												autoFocus={index === 0}
+												autoFocus={isFirstInput}
+												onSubmitEditing={() => {
+													if (isLastInput) {
+														void form.handleSubmit();
+													}
+												}}
 											/>
 										</AuthFormInput>
 
@@ -160,7 +156,8 @@ export default function EmailSignup() {
 					canSubmit,
 					isSubmitting,
 				})}>
-				{({ canSubmit, isSubmitting }) => {
+				{({ canSubmit, isSubmitting: isFormSubmitting }) => {
+					const isSubmitting = isFormSubmitting || isApiSubmitting;
 					const isDisabled = !canSubmit || isSubmitting;
 					return (
 						<FlowButton
