@@ -8,6 +8,7 @@ import tseslint from "typescript-eslint";
 import turboPlugin from "eslint-plugin-turbo";
 
 export default defineConfig({
+	ignores: ["eslint.config.js", "node_modules"],
 	extends: [
 		eslintJs.configs.recommended,
 		tseslint.configs.recommendedTypeChecked,
