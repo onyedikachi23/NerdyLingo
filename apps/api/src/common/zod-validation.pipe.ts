@@ -3,25 +3,20 @@
 import {
 	ArgumentMetadata,
 	BadRequestException,
-	HttpStatus,
 	PipeTransform,
 } from "@nestjs/common";
 import z from "zod";
 
 export class ZodValidationException<T = unknown> extends BadRequestException {
 	constructor(private readonly error: T) {
-		super({
-			statusCode: HttpStatus.BAD_REQUEST,
-			message:
-				error instanceof z.ZodError
-					? error.issues.map(({ message }) => message).join(", ")
-					: "Validation failed",
-			errors:
-				error instanceof z.ZodError
-					? // error && typeof error === "object" && "issues" in error
-						error.issues
-					: undefined,
-		});
+		super(
+			error instanceof z.ZodError
+				? z.prettifyError(error)
+				: "Validation failed",
+			{
+				cause: error,
+			},
+		);
 	}
 	getZodError() {
 		return this.error;
