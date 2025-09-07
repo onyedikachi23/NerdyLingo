@@ -2,16 +2,18 @@
 
 // @ts-check
 
-import { defineConfig } from "eslint/config";
 import eslintJs from "@eslint/js";
-import tseslint from "typescript-eslint";
+import importPlugin from "eslint-plugin-import";
 import turboPlugin from "eslint-plugin-turbo";
+import { defineConfig } from "eslint/config";
+import tseslint from "typescript-eslint";
 
 export default defineConfig({
 	ignores: ["eslint.config.js", "node_modules"],
 	extends: [
 		eslintJs.configs.recommended,
 		tseslint.configs.recommendedTypeChecked,
+		importPlugin.flatConfigs.recommended,
 	],
 
 	languageOptions: {
