@@ -96,7 +96,7 @@ type UnionToIntersection<U> = (
  * @template T - The original object type.
  * @template K - A union of keys from T that should be made required.
  */
-type RequireKeys<T, K extends keyof T> = Required<Pick<T, K>> & Omit<T, K>;
+type RequireKeys<T, K extends keyof T> = T & { [P in K]-?: T[P] };
 
 /**
  * Makes a subset of keys in an object type optional,
