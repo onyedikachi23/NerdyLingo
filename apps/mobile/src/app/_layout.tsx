@@ -11,26 +11,25 @@ import "../../global.css";
 
 import { Box } from "@/components/ui/box";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import { Toaster } from "@/components/ui/toast";
+import { useAppColorScheme } from "@/hooks/use-color-scheme";
+import { useToastThemedColors } from "@/hooks/use-toast-themed-colors";
 import {
 	focusManager,
 	onlineManager,
 	QueryClient,
 	QueryClientProvider,
 } from "@tanstack/react-query";
+import * as Network from "expo-network";
 import { StatusBar } from "expo-status-bar";
-import {
-	AppState,
-	Platform,
-	useColorScheme,
-	type AppStateStatus,
-} from "react-native";
+import React from "react";
+import { AppState, Platform, type AppStateStatus } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import {
 	configureReanimatedLogger,
 	ReanimatedLogLevel,
 } from "react-native-reanimated";
-import * as Network from "expo-network";
-import React from "react";
 
 configureReanimatedLogger({
 	level: ReanimatedLogLevel.warn,
@@ -66,8 +65,10 @@ const useRefetchOnAppFocus = () => {
 const queryClient = new QueryClient();
 
 export default function RootLayout() {
-	const colorScheme = useColorScheme();
+	const { colorScheme } = useAppColorScheme();
 	useRefetchOnAppFocus();
+
+	const toastColors = useToastThemedColors();
 
 	return (
 		<KeyboardProvider>
@@ -84,12 +85,20 @@ export default function RootLayout() {
 							}
 				}>
 				<QueryClientProvider client={queryClient}>
-					<GluestackUIProvider mode={colorScheme ?? "system"}>
-						<Box className="flex-1 bg-background-0">
-							<StatusBar style="dark" />
-							<Stack screenOptions={{ headerShown: false }} />
-						</Box>
-					</GluestackUIProvider>
+					<GestureHandlerRootView>
+						<GluestackUIProvider mode={colorScheme ?? "system"}>
+							<Box className="flex-1 bg-background-0">
+								<StatusBar style="dark" />
+								<Stack screenOptions={{ headerShown: false }} />
+							</Box>
+
+							<Toaster
+								colors={toastColors}
+								theme={colorScheme}
+								richColors
+							/>
+						</GluestackUIProvider>
+					</GestureHandlerRootView>
 				</QueryClientProvider>
 			</ThemeProvider>
 		</KeyboardProvider>
