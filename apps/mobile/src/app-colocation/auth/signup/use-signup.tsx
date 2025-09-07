@@ -2,7 +2,9 @@
 
 import { apiAxiosInstance } from "@/lib/axios-instance";
 import { useMutation } from "@tanstack/react-query";
-import type { EmailSignupForm } from "../signup/form-schema";
+import type { EmailSignupForm } from "./form-schema";
+import { toast } from "@/components/ui/toast";
+import { getErrorMessage } from "@/lib/utils";
 
 export const useSignup = () => {
 	return useMutation({
@@ -10,12 +12,12 @@ export const useSignup = () => {
 			await apiAxiosInstance.post("/auth/signup", body);
 		},
 		onSuccess: () => {
-			alert("Signup success");
+			toast.success("Signup successful");
 		},
 		onError: (e) => {
-			console.error("sign up failed", e);
-
-			alert("Signup failed");
+			toast.error("Signup failed", {
+				description: getErrorMessage(e),
+			});
 		},
 	});
 };
