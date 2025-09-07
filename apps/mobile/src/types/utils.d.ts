@@ -44,32 +44,39 @@ type SafeExtract<T, U extends T> = Extract<T, U>;
 type SafeExclude<T, U extends T> = Exclude<T, U>;
 
 /**
- * Distributes the `Omit` utility type over a union.
- * This means if `T` is a union (`A | B`), `DistributedOmit<T, K>`
+ * A type-safe version of {@link Omit} that ensures K can only be keys of T.
+ *
+ * It also distributes the `Omit` utility type over a union.
+ * This means if `T` is a union (`A | B`), `SafeOmit<T, K>`
  * will apply `Omit` to each member of the union individually
  * (`Omit<A, K> | Omit<B, K>`).
  *
  * @see {@link https://github.com/microsoft/TypeScript/issues/49659#issuecomment-1164773544 Omit on a discriminating union with intersection}
  */
-type DistributedOmit<T, K extends keyof never> = T extends unknown
-	? Omit<T, K>
-	: never;
+type SafeOmit<T, K extends keyof T> = T extends unknown ? Omit<T, K> : never;
 
 /**
- * A type-safe version of {@link DistributedOmit} that ensures K can only be keys of T.
+ * A distributive version of {@link Pick} that distributes the `Pick` utility type over a union.
+ * This means if `T` is a union (`A | B`), `SafePick<T, K>`
+ * will apply `Pick` to each member of the union individually
+ * (`Pick<A, K> | Pick<B, K>`).
+ *
+ * @see {@link SafeOmit}
  */
-type SafeOmit<T, K extends keyof T> = DistributedOmit<T, K>;
+type SafePick<T, K extends keyof T> = T extends unknown ? Pick<T, K> : never;
 
 /**
  * Turns a complex intersection (or union) of objects into a
  * clean object type.
  *
- * It is distributive when T is a union.
+ * It is distributive when T is a union. This means if `T` is a union (`A | B`), `Prettify<T>`
+ * will prettify each member of the union individually
+ * (`Prettify<A, K> | Prettify<B, K>`).
  */
 type Prettify<T> = T extends unknown
 	? {
 			[K in keyof T]: T[K];
-	  } & {}
+		} & {}
 	: never;
 
 /**
@@ -127,6 +134,15 @@ type AssertSubtype<T, U extends T> = U;
 /**
  * Ensures an object has all the keys of type `T`, allowing any value type.
  *
- * Useful with `satisfies` keyword to validate key presence without strict value type matching.
+ * Useful with `satisfies` keyword to validate key presence with/without strict value type matching.
  */
-type HasKeysOf<T> = Record<keyof T, unknown>;
+type HasKeysOf<T, TValue = unknown> = Record<keyof T, TValue>;
+
+/**
+ * Creates a branded type, a type-safe way to distinguish between
+ * values of the same underlying type.
+ *
+ * @template T The underlying type.
+ * @template B The unique brand literal.
+ */
+type Brand<T, B> = T & { __brand: B };
