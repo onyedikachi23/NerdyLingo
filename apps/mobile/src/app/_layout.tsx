@@ -11,12 +11,15 @@ import "../../global.css";
 
 import { Box } from "@/components/ui/box";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import { Toaster } from "@/components/ui/toast";
+import { toast, Toaster } from "@/components/ui/toast";
 import { useAppColorScheme } from "@/hooks/use-color-scheme";
 import { useToastThemedColors } from "@/hooks/use-toast-themed-colors";
 import {
 	focusManager,
+	matchQuery,
+	MutationCache,
 	onlineManager,
+	QueryCache,
 	QueryClient,
 	QueryClientProvider,
 } from "@tanstack/react-query";
@@ -30,6 +33,7 @@ import {
 	configureReanimatedLogger,
 	ReanimatedLogLevel,
 } from "react-native-reanimated";
+import { getErrorMessage } from "@/lib/utils";
 
 configureReanimatedLogger({
 	level: ReanimatedLogLevel.warn,
@@ -62,7 +66,43 @@ const useRefetchOnAppFocus = () => {
 	}, [onAppStateChange]);
 };
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+	mutationCache: new MutationCache({
+		onSuccess: (_data, _variables, _context, mutation) => {
+			void queryClient.invalidateQueries({
+				predicate: (query) =>
+					// invalidate all matching tags at once
+					// or everything if no meta is provided
+					mutation.meta?.invalidates?.some((queryKey) =>
+						// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+						matchQuery({ queryKey }, query),
+					) ?? true,
+			});
+		},
+	}),
+	queryCache: new QueryCache({
+		onError(error, query) {
+			const customOnError = query.meta?.onError;
+
+			const toastControlValue =
+				typeof customOnError === "function"
+					? customOnError(error, query)
+					: customOnError;
+
+			if (toastControlValue === "no-toast") return;
+
+			const toastTitle =
+				typeof toastControlValue === "string"
+					? toastControlValue
+					: "Something went wrong";
+
+			toast.error(toastTitle, {
+				description: getErrorMessage(error),
+				position: "top-center",
+			});
+		},
+	}),
+});
 
 export default function RootLayout() {
 	const { colorScheme } = useAppColorScheme();
