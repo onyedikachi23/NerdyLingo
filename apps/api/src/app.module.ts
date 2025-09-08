@@ -7,9 +7,18 @@ import { AuthModule } from "./auth/auth.module";
 import { UsersModule } from "./users/users.module";
 import { APP_GUARD } from "@nestjs/core";
 import { JwtAuthGuard } from "./auth/jwt-auth.guard";
+import { DrizzleModule } from "./drizzle/drizzle.module";
+import { ConfigModule } from "@nestjs/config";
 
 @Module({
-	imports: [AuthModule, UsersModule],
+	imports: [
+		AuthModule,
+		UsersModule,
+		DrizzleModule,
+		ConfigModule.forRoot({
+			envFilePath: [".env", ".env.local"],
+		}),
+	],
 	controllers: [AppController],
 	providers: [
 		AppService,
