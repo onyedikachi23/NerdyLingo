@@ -11,8 +11,7 @@ import {
 import { User, users } from "./users.schema";
 import { eq } from "drizzle-orm";
 import { isPostgresError } from "@/drizzle/utils";
-
-// This should be a real class/interface representing a user entity
+import bcrypt from "bcrypt";
 
 @Injectable()
 export class UsersService {
@@ -20,9 +19,15 @@ export class UsersService {
 
 	async createUser(user: Pick<User, "name" | "email" | "password">) {
 		try {
+			const hashedPassword = await bcrypt.hash(user.password, 10);
+			const userWithHashedPassword = {
+				...user,
+				password: hashedPassword,
+			};
+
 			const [newUser] = await this.db
 				.insert(users)
-				.values(user)
+				.values(userWithHashedPassword)
 				.returning();
 
 			if (!newUser) {
@@ -30,8 +35,6 @@ export class UsersService {
 					"Failed to create user: no user data returned.",
 				);
 			}
-
-			// TODO encrypt password
 
 			return newUser;
 		} catch (error) {
