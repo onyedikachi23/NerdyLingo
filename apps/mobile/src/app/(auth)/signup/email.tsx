@@ -10,10 +10,7 @@ import {
 	AuthFormInputField,
 	type FieldBuilder,
 } from "@/app-colocation/auth/components/email-form";
-import {
-	EmailSignupFieldsSchema,
-	type EmailSignupForm,
-} from "@/app-colocation/auth/signup/form-schema";
+import { type EmailSignupForm } from "@/app-colocation/auth/signup/types";
 import { useSignup } from "@/app-colocation/auth/signup/use-signup";
 import { isFieldRequired } from "@/app-colocation/auth/utils";
 import {
@@ -23,6 +20,7 @@ import {
 } from "@/components/ui-common/flow-button";
 import { ButtonSpinner } from "@/components/ui/button";
 import { FormControl } from "@/components/ui/form-control";
+import { EmailSignupFieldsSchema } from "@repo/shared/auth";
 import { useForm } from "@tanstack/react-form";
 import { ChevronRight } from "lucide-react-native";
 

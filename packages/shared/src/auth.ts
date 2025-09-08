@@ -10,15 +10,14 @@ const StrongPasswordSchema = z
 	.regex(/\d/, "At least one number")
 	.regex(/[^a-zA-Z0-9\s]/, "At least one special character");
 
+/**
+ * @note You have to add confirm password validation yourself.
+ */
 export const EmailSignupFieldsSchema = {
 	name: z.string().min(1, {
 		error: "Name is required",
 	}),
 	email: z.email(),
 	password: StrongPasswordSchema,
-	confirmPassword: z.string(), // Passwords match validation will be done at field level
+	confirmPassword: z.string(),
 } satisfies z.ZodRawShape;
-
-export type EmailSignupForm = z.infer<
-	z.ZodObject<typeof EmailSignupFieldsSchema>
->;
