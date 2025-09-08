@@ -5,7 +5,7 @@ import { AuthService } from "./auth/auth.service";
 import { JwtAuthGuard } from "./auth/jwt-auth.guard";
 import { LocalAuthGuard } from "./auth/local-auth.guard";
 import { SkipAuth } from "./auth/skip-auth.decorator";
-import { User } from "./users/users.service";
+import { User } from "./users/users.schema";
 
 @Controller()
 export class AppController {

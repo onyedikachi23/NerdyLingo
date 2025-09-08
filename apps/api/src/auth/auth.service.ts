@@ -1,6 +1,7 @@
 /** @format */
 
-import { User, UsersService } from "@/users/users.service";
+import { User } from "@/users/users.schema";
+import { UsersService } from "@/users/users.service";
 import { Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 
@@ -20,8 +21,8 @@ export class AuthService {
 		return null;
 	}
 
-	async login(user: Pick<User, "userId" | "email">) {
-		const payload = { email: user.email, sub: user.userId };
+	async login(user: Pick<User, "id" | "email">) {
+		const payload = { email: user.email, sub: user.id };
 		return {
 			access_token: this.jwtService.sign(payload),
 		};

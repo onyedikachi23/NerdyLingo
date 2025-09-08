@@ -1,30 +1,54 @@
 /** @format */
 
-import { Injectable } from "@nestjs/common";
+import { DRIZZLE_KEY, PG_ERROR_CODES } from "@/drizzle/constants";
+import type { DrizzleDB } from "@/drizzle/types";
+import {
+	ConflictException,
+	Inject,
+	Injectable,
+	InternalServerErrorException,
+} from "@nestjs/common";
+import { User, users } from "./users.schema";
+import { eq } from "drizzle-orm";
+import { isPostgresError } from "@/drizzle/utils";
 
 // This should be a real class/interface representing a user entity
-export interface User {
-	userId: number;
-	email: string;
-	password: string;
-}
 
 @Injectable()
 export class UsersService {
-	private readonly users: User[] = [
-		{
-			userId: 1,
-			email: "john@gmail.com",
-			password: "changeme",
-		},
-		{
-			userId: 2,
-			email: "maria@gmail.com",
-			password: "guess",
-		},
-	];
+	constructor(@Inject(DRIZZLE_KEY) private db: DrizzleDB) {}
 
-	async findOne(email: string): Promise<User | undefined> {
-		return this.users.find((user) => user.email === email);
+	async createUser(user: Pick<User, "name" | "email" | "password">) {
+		try {
+			const [newUser] = await this.db
+				.insert(users)
+				.values(user)
+				.returning();
+
+			if (!newUser) {
+				throw new InternalServerErrorException(
+					"Failed to create user: no user data returned.",
+				);
+			}
+
+			// TODO encrypt password
+
+			return newUser;
+		} catch (error) {
+			if (
+				isPostgresError(error) &&
+				error.cause.code === PG_ERROR_CODES.UNIQUE_VIOLATION
+			) {
+				throw new ConflictException("Email already exists");
+			}
+			throw error;
+		}
+	}
+
+	async findOne(email: string) {
+		const user = await this.db.query.users.findFirst({
+			where: eq(users.email, email),
+		});
+		return user;
 	}
 }
