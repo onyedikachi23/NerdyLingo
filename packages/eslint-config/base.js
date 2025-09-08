@@ -3,7 +3,6 @@
 // @ts-check
 
 import eslintJs from "@eslint/js";
-import importPlugin from "eslint-plugin-import";
 import turboPlugin from "eslint-plugin-turbo";
 import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
@@ -13,7 +12,6 @@ export default defineConfig({
 	extends: [
 		eslintJs.configs.recommended,
 		tseslint.configs.recommendedTypeChecked,
-		importPlugin.flatConfigs.recommended,
 	],
 
 	languageOptions: {
