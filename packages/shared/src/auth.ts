@@ -21,3 +21,10 @@ export const EmailSignupFieldsSchema = {
 	password: StrongPasswordSchema,
 	confirmPassword: z.string(),
 } satisfies z.ZodRawShape;
+
+export const EmailLoginFieldsSchema = {
+	email: z.email(),
+	password: z.string().min(1, {
+		error: "Password is required",
+	}), // no need for strong password schema. Api will validate the authenticity.
+} satisfies z.ZodRawShape;

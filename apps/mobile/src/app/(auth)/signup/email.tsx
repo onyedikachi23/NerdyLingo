@@ -10,8 +10,8 @@ import {
 	AuthFormInputField,
 	type FieldBuilder,
 } from "@/app-colocation/auth/components/email-form";
-import { type EmailSignupForm } from "@/app-colocation/auth/signup/types";
-import { useSignup } from "@/app-colocation/auth/signup/use-signup";
+import { useSignup } from "@/app-colocation/auth/hooks/use-signup";
+import type { EmailSignupForm } from "@/app-colocation/auth/types";
 import { isFieldRequired } from "@/app-colocation/auth/utils";
 import {
 	FlowButton,

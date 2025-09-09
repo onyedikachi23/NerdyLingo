@@ -11,3 +11,6 @@ export interface AuthSignupResponse {
 	accessToken: string;
 	user: SafeOmit<User, "password">;
 }
+
+// TODO: Add other differentiating properties
+export type AuthLoginResponse = AuthSignupResponse;
