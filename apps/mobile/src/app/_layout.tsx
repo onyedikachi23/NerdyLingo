@@ -34,6 +34,7 @@ import {
 	ReanimatedLogLevel,
 } from "react-native-reanimated";
 import { getErrorMessage } from "@/lib/utils";
+import { AuthProvider } from "@/app-colocation/auth/context";
 
 configureReanimatedLogger({
 	level: ReanimatedLogLevel.warn,
@@ -124,22 +125,26 @@ export default function RootLayout() {
 								},
 							}
 				}>
-				<QueryClientProvider client={queryClient}>
-					<GestureHandlerRootView>
-						<GluestackUIProvider mode={colorScheme ?? "system"}>
-							<Box className="flex-1 bg-background-0">
-								<StatusBar style="dark" />
-								<Stack screenOptions={{ headerShown: false }} />
-							</Box>
+				<AuthProvider>
+					<QueryClientProvider client={queryClient}>
+						<GestureHandlerRootView>
+							<GluestackUIProvider mode={colorScheme ?? "system"}>
+								<Box className="flex-1 bg-background-0">
+									<StatusBar style="dark" />
+									<Stack
+										screenOptions={{ headerShown: false }}
+									/>
+								</Box>
 
-							<Toaster
-								colors={toastColors}
-								theme={colorScheme}
-								richColors
-							/>
-						</GluestackUIProvider>
-					</GestureHandlerRootView>
-				</QueryClientProvider>
+								<Toaster
+									colors={toastColors}
+									theme={colorScheme}
+									richColors
+								/>
+							</GluestackUIProvider>
+						</GestureHandlerRootView>
+					</QueryClientProvider>
+				</AuthProvider>
 			</ThemeProvider>
 		</KeyboardProvider>
 	);
