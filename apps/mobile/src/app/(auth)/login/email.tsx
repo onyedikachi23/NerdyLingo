@@ -10,6 +10,8 @@ import {
 	AuthFormInputField,
 	type FieldBuilder,
 } from "@/app-colocation/auth/components/email-form";
+import { useLogin } from "@/app-colocation/auth/hooks/useLogin";
+import type { EmailLoginForm } from "@/app-colocation/auth/types";
 import { isFieldRequired } from "@/app-colocation/auth/utils";
 import {
 	FlowButton,
@@ -18,24 +20,9 @@ import {
 } from "@/components/ui-common/flow-button";
 import { ButtonSpinner } from "@/components/ui/button";
 import { FormControl } from "@/components/ui/form-control";
+import { EmailLoginFieldsSchema } from "@repo/shared/auth";
 import { useForm } from "@tanstack/react-form";
 import { ChevronRight } from "lucide-react-native";
-import z from "zod";
-
-const StrongPasswordSchema = z
-	.string()
-	.min(8, "At least 8 characters long")
-	.regex(/[a-z]/, "At least one lowercase letter")
-	.regex(/[A-Z]/, "At least one uppercase letter")
-	.regex(/\d/, "At least one number")
-	.regex(/[^a-zA-Z0-9\s]/, "At least one special character");
-
-const fieldsSchema = {
-	email: z.email(),
-	password: StrongPasswordSchema,
-} satisfies z.ZodRawShape;
-
-type EmailLoginForm = z.infer<z.ZodObject<typeof fieldsSchema>>;
 
 const fieldsBuilder = [
 	{
@@ -52,11 +39,13 @@ const fieldsBuilder = [
 ] satisfies FieldBuilder<EmailLoginForm>[];
 
 export default function EmailLogin() {
+	const { mutate: login, isPending: isApiSubmitting } = useLogin();
 	const form = useForm({
 		defaultValues: {
 			email: "",
 			password: "",
 		} satisfies EmailLoginForm,
+		onSubmit: ({ value }) => login(value),
 	});
 
 	return (
@@ -66,18 +55,20 @@ export default function EmailLogin() {
 			<AuthFormFieldsContainer>
 				{fieldsBuilder.map(
 					({ name, label, placeholder, type }, index) => {
+						const isFirstInput = index === 0;
+						const isLastInput = index === fieldsBuilder.length - 1;
 						return (
 							<form.Field
 								key={name}
 								name={name}
 								validators={{
-									onBlur: fieldsSchema[name],
+									onBlur: EmailLoginFieldsSchema[name],
 								}}>
 								{(field) => (
 									<FormControl
 										isInvalid={!field.state.meta.isValid}
 										isRequired={isFieldRequired(
-											fieldsSchema[name],
+											EmailLoginFieldsSchema[name],
 										)}>
 										<AuthFormControlLabel>
 											{label}
@@ -92,7 +83,12 @@ export default function EmailLogin() {
 													field.handleChange
 												} // for syncing changes to field state
 												type={type}
-												autoFocus={index === 0}
+												autoFocus={isFirstInput}
+												onSubmitEditing={() => {
+													if (isLastInput) {
+														void form.handleSubmit();
+													}
+												}}
 											/>
 										</AuthFormInput>
 
@@ -116,7 +112,8 @@ export default function EmailLogin() {
 					canSubmit,
 					isSubmitting,
 				})}>
-				{({ canSubmit, isSubmitting }) => {
+				{({ canSubmit, isSubmitting: isFormSubmitting }) => {
+					const isSubmitting = isFormSubmitting || isApiSubmitting;
 					const isDisabled = !canSubmit || isSubmitting;
 					return (
 						<FlowButton

@@ -1,0 +1,22 @@
+{
+	"name": "@repo/shared",
+	"version": "0.0.0",
+	"main": "index.js",
+	"scripts": {
+		"dev": "tsc --watch",
+		"build": "tsc"
+	},
+	"exports": {
+		"./*": {
+			"types": "./src/*.ts",
+			"default": "./dist/*.js"
+		}
+	},
+	"type": "module",
+	"dependencies": {
+		"zod": "^4.1.1"
+	},
+	"devDependencies": {
+		"@repo/typescript-config": "*"
+	}
+}

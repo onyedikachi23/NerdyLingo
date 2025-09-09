@@ -28,7 +28,8 @@ import Animated, {
 	withTiming,
 } from "react-native-reanimated";
 import { scheduleOnRN } from "react-native-worklets";
-import { Redirect } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
+import { useAuth } from "@/app-colocation/auth/context";
 
 const AnimatedBox = Animated.createAnimatedComponent(Box);
 
@@ -209,8 +210,12 @@ export default function OnboardingScreen() {
 			}
 		});
 
+	const router = useRouter();
+	const { isAuthenticated } = useAuth();
 	if (hasCompletedOnboarding) {
-		return <Redirect href={"/(auth)/login"} />;
+		return (
+			<Redirect href={isAuthenticated ? "/(tabs)" : "/(auth)/login"} />
+		);
 	}
 
 	return (
@@ -218,7 +223,15 @@ export default function OnboardingScreen() {
 			{/* The banner images drawing below the StatusBar causes contrast issues */}
 			<StatusBar style="light" />
 
-			<Box className="relative flex-1">
+			<Box
+				className="relative flex-1"
+				ref={(view) => {
+					if (view) {
+						// these are routes needed for redirect when onboarding is completed.
+						router.prefetch("/(auth)/login");
+						router.prefetch("/(tabs)");
+					}
+				}}>
 				{ONBOARDING_STEPS.map((step, index) => (
 					<StepBanner
 						key={step.image}
