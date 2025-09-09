@@ -3,6 +3,7 @@
 import type { PlainObject } from "@/types";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import z from "zod";
 import { isAxiosApiError } from "./axios-instance";
 
 export const cn = (...inputs: ClassValue[]) => {
@@ -16,16 +17,21 @@ export const getErrorMessage = (error: unknown): string => {
 	if (typeof error === "string") {
 		return error;
 	}
-	if (isAxiosApiError(error)) {
-		return error.response.data.message;
-	}
+
 	if (error instanceof Error) {
+		if (isAxiosApiError(error)) {
+			return error.response.data.message;
+		}
+		if (error instanceof z.ZodError) {
+			return z.prettifyError(error);
+		}
 		return error.message;
 	}
+
 	return "Unknown error";
 };
 
-export const ensureError = (error: unknown): Error => {
+export const ensureIsError = (error: unknown): Error => {
 	if (error instanceof Error) {
 		return error;
 	}
