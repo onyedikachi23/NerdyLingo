@@ -1,62 +1,19 @@
 /** @format */
 
 import { useAuth } from "@/app-colocation/auth/context";
-import { HomeIcon, Icon } from "@/app-colocation/main-tabs/tab-icons";
-import { Button, ButtonGroup, ButtonText } from "@/components/ui/button";
-import { Redirect, type Href } from "expo-router";
+import { TabButton } from "@/app-colocation/main-tabs/tab-button";
+import {
+	HomeIcon,
+	NotesIcon,
+	PeopleIcon,
+	SettingsIcon,
+} from "@/app-colocation/main-tabs/tab-icons";
+import type { TabItem } from "@/app-colocation/main-tabs/types";
+import { ButtonGroup } from "@/components/ui/button";
+import { Redirect, useRouter } from "expo-router";
 import { TabList, Tabs, TabSlot, TabTrigger } from "expo-router/ui";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-interface TabItem {
-	href: Href;
-	name: string;
-	Icon: React.ElementType;
-	label: string;
-}
-
-type TabButtonProps = Pick<TabItem, "Icon" | "label">;
-
-const TabButton: React.FC<TabButtonProps> = (props) => {
-	const hasIsFocusedProp = (
-		props: unknown,
-	): props is TabButtonProps & { isFocused: boolean } =>
-		!!props &&
-		typeof props === "object" &&
-		"isFocused" in props &&
-		typeof props.isFocused === "boolean";
-
-	if (!hasIsFocusedProp(props)) {
-		throw new Error(
-			"TabButton must be used within a '<TabTrigger aschild={true} />'.",
-		);
-	}
-
-	const { label, Icon: SvgIcon, isFocused, ...otherProps } = props;
-
-	return (
-		<Button
-			{...otherProps}
-			variant="ghost"
-			size="sm"
-			className="h-auto !flex-col items-center justify-center">
-			<Icon
-				as={SvgIcon}
-				height={24}
-				width={24}
-				className={
-					isFocused ? "text-primary-500" : "text-typography-500/50"
-				}
-			/>
-			<ButtonText
-				className={
-					isFocused ? "text-primary-500" : "text-typography-500/50"
-				}>
-				{label}
-			</ButtonText>
-		</Button>
-	);
-};
 
 const tabs = [
 	{
@@ -67,32 +24,42 @@ const tabs = [
 	},
 	{
 		href: "/conversations",
-		Icon: HomeIcon,
+		Icon: PeopleIcon,
 		name: "conversations",
 		label: "Conversations",
 	},
 	{
 		href: "/notes",
-		Icon: HomeIcon,
+		Icon: NotesIcon,
 		name: "notes",
 		label: "Notes",
 	},
 	{
 		href: "/settings",
-		Icon: HomeIcon,
+		Icon: SettingsIcon,
 		name: "settings",
 		label: "Settings",
 	},
 ] satisfies TabItem[];
 
 export default function TabsLayout() {
+	const router = useRouter();
+
 	const { isAuthenticated } = useAuth();
 	if (!isAuthenticated) {
 		return <Redirect href={"/(auth)/login"} />;
 	}
 
 	return (
-		<SafeAreaView className="flex-1 p-4">
+		<SafeAreaView
+			className="flex-1 p-4"
+			ref={(view) => {
+				if (view) {
+					tabs.forEach(({ href }) => {
+						router.prefetch(href);
+					});
+				}
+			}}>
 			<Tabs>
 				<TabSlot />
 
