@@ -25,6 +25,8 @@
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
+    "@repo/shared": "*",
+    "@siteed/expo-audio-studio": "^2.18.1",
     "@tanstack/react-form": "^1.19.2",
     "@tanstack/react-query": "^5.87.1",
     "axios": "^1.11.0",
@@ -40,6 +42,7 @@
     "expo-navigation-bar": "~4.2.8",
     "expo-network": "~7.1.5",
     "expo-router": "~5.1.5",
+    "expo-secure-store": "~14.2.4",
     "expo-splash-screen": "~0.30.10",
     "expo-status-bar": "~2.2.3",
     "expo-symbols": "~0.4.5",
@@ -65,13 +68,12 @@
     "tailwind-variants": "^0.1.20",
     "tailwindcss": "^3.4.17",
     "zod": "^4.1.1",
-    "@repo/shared": "*",
-    "expo-secure-store": "~14.2.4"
+    "expo-audio": "~0.4.9"
   },
   "devDependencies": {
+    "@babel/core": "^7.25.2",
     "@repo/eslint-config": "*",
     "@repo/prettier-config": "*",
-    "@babel/core": "^7.25.2",
     "@tanstack/eslint-plugin-query": "^5.86.0",
     "@types/react": "~19.0.10",
     "eslint-config-expo": "^9.2.0",

@@ -52,7 +52,7 @@ export default function TabsLayout() {
 
 	return (
 		<SafeAreaView
-			className="flex-1 p-4"
+			className="flex-1"
 			ref={(view) => {
 				if (view) {
 					tabs.forEach(({ href }) => {
@@ -64,7 +64,7 @@ export default function TabsLayout() {
 				<TabSlot />
 
 				{/* This displays and controls the tabs */}
-				<ButtonGroup className="flex-row">
+				<ButtonGroup className="flex-row p-4">
 					{tabs.map(({ href, ...item }) => (
 						<TabTrigger key={href} name={item.name} asChild>
 							<TabButton key={href} {...item} />
