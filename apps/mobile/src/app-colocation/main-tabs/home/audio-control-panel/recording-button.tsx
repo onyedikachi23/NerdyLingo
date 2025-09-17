@@ -3,7 +3,7 @@
 import { Button, ButtonText } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { toast } from "@/components/ui/toast";
-import { getErrorMessage } from "@/lib/utils";
+import { cn, getErrorMessage } from "@/lib/utils";
 import {
 	ExpoAudioStreamModule,
 	useSharedAudioRecorder,
@@ -33,7 +33,9 @@ const preRecordingCandleData = [
 	{ id: 4, amplitude: 10 },
 ] satisfies WaveCandleData[] & { length: typeof VISIBLE_CANDLES_COUNT };
 
-export const RecordingButton = () => {
+export const RecordingButton: React.FC<{ className?: string }> = ({
+	className,
+}) => {
 	const {
 		startRecording,
 		stopRecording,
@@ -182,7 +184,10 @@ export const RecordingButton = () => {
 			}}
 			variant="ghost"
 			size="lg"
-			className="relative flex aspect-square flex-row items-center justify-center gap-1 rounded-full px-0 data-[active=true]:scale-[0.97]"
+			className={cn(
+				"relative flex aspect-square flex-row items-center justify-center gap-1 rounded-full px-0 data-[active=true]:scale-[0.97]",
+				className,
+			)}
 			style={{ height: CANVAS_HEIGHT, width: CANVAS_HEIGHT }}>
 			<Image
 				accessibilityLabel="Wave button svg"
