@@ -19,6 +19,7 @@
     "@gluestack-ui/icon": "^0.1.27",
     "@gluestack-ui/image": "^0.1.17",
     "@gluestack-ui/input": "^0.1.38",
+    "@gluestack-ui/menu": "^0.2.43",
     "@gluestack-ui/nativewind-utils": "^1.0.28",
     "@gluestack-ui/overlay": "^0.1.22",
     "@legendapp/motion": "^2.4.0",
@@ -32,6 +33,7 @@
     "axios": "^1.11.0",
     "babel-plugin-module-resolver": "^5.0.2",
     "expo": "^53.0.22",
+    "expo-audio": "~0.4.9",
     "expo-blur": "~14.1.5",
     "expo-constants": "~17.1.7",
     "expo-dev-client": "~5.2.4",
@@ -67,8 +69,7 @@
     "react-stately": "^3.40.0",
     "tailwind-variants": "^0.1.20",
     "tailwindcss": "^3.4.17",
-    "zod": "^4.1.1",
-    "expo-audio": "~0.4.9"
+    "zod": "^4.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
