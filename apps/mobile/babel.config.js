@@ -9,7 +9,6 @@ module.exports = function (api) {
 				"babel-preset-expo",
 				{
 					jsxImportSource: "nativewind",
-					reanimated: false,
 				},
 			],
 			"nativewind/babel",
@@ -27,7 +26,6 @@ module.exports = function (api) {
 					},
 				},
 			],
-			"react-native-worklets/plugin",
 		],
 	};
 };
