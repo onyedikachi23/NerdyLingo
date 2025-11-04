@@ -1,6 +1,6 @@
 /** @format */
 
-import { EmailSignupFieldsSchema } from "@repo/shared/auth";
+import { EmailSignupFieldsSchema } from "@repo/shared";
 import z from "zod";
 
 export const signupSchema = z

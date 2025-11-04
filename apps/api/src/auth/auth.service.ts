@@ -33,7 +33,9 @@ export class AuthService {
 			email: user.email,
 		} satisfies AuthJwtPayload;
 
-		const accessToken = this.jwtService.sign(payload);
+		const accessToken = this.jwtService.sign(payload, {
+			expiresIn: "30d",
+		});
 
 		return { accessToken, user } satisfies AuthSignupResponse;
 	}
@@ -60,7 +62,9 @@ export class AuthService {
 		} satisfies AuthJwtPayload;
 
 		const { password: _, ...userWithoutPassword } = user;
-		const accessToken = this.jwtService.sign(payload);
+		const accessToken = this.jwtService.sign(payload, {
+			expiresIn: "30d",
+		});
 		return {
 			accessToken,
 			user: userWithoutPassword,

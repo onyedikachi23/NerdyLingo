@@ -3,18 +3,12 @@
 import axios, { AxiosError, isAxiosError } from "axios";
 import z from "zod";
 
-// eslint-disable-next-line turbo/no-undeclared-env-vars
-const baseURLValidation = z.url().safeParse(process.env.EXPO_PUBLIC_API_URL);
-if (!baseURLValidation.success) {
-	console.error(
-		"[axios instance]: EXPO_PUBLIC_API_URL env is invalid",
-		baseURLValidation.error.issues,
-	);
-	throw new Error("[axios instance]: EXPO_PUBLIC_API_URL env is invalid");
-}
+const baseApiURL = z
+	.url({ error: "EXPO_PUBLIC_API_URL env is invalid" })
+	.parse(process.env.EXPO_PUBLIC_API_URL);
 
 const apiAxiosInstance = axios.create({
-	baseURL: baseURLValidation.data,
+	baseURL: baseApiURL,
 });
 
 interface ApiErrorResponse {

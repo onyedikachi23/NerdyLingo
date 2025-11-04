@@ -2,10 +2,10 @@
 
 import { toast } from "@/components/ui/toast";
 import { useRouter } from "expo-router";
-import * as SecureStore from "expo-secure-store";
 import React from "react";
 import { useMMKVBoolean } from "react-native-mmkv";
-import z from "zod";
+import * as z from "zod";
+import { deleteAuthToken, getAuthToken, setAuthToken } from "./utils";
 
 interface AuthContextType {
 	isAuthenticated: boolean;
@@ -23,9 +23,7 @@ const useAuth = () => {
 	return context;
 };
 
-const AUTH_KEY_PREFIX = "auth.";
-const IS_AUTHENTICATED_KEY = `${AUTH_KEY_PREFIX}isAuthenticated`;
-const ACCESS_TOKEN_KEY = `${AUTH_KEY_PREFIX}accessToken`;
+const IS_AUTHENTICATED_KEY = `auth.isAuthenticated`;
 
 const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 	const [isAuthenticated, setIsAuthenticated] =
@@ -33,7 +31,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 	const router = useRouter();
 	const logout = React.useCallback(async () => {
-		await SecureStore.deleteItemAsync(ACCESS_TOKEN_KEY);
+		await deleteAuthToken();
 
 		// Add api based logout
 
@@ -46,8 +44,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 		if (isAuthenticated) {
 			const confirmIsValidAuth = async () => {
 				try {
-					const accessToken =
-						await SecureStore.getItemAsync(ACCESS_TOKEN_KEY);
+					const accessToken = await getAuthToken();
 
 					// Change this to api based validation
 					const validation = z.string().safeParse(accessToken);
@@ -77,7 +74,7 @@ const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
 	const login = React.useCallback(
 		async ({ accessToken }: { accessToken: string }) => {
-			await SecureStore.setItemAsync(ACCESS_TOKEN_KEY, accessToken);
+			await setAuthToken(accessToken);
 			setIsAuthenticated(true);
 		},
 		[setIsAuthenticated],

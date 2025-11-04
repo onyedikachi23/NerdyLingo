@@ -7,9 +7,9 @@
 		"build": "tsc"
 	},
 	"exports": {
-		"./*": {
-			"types": "./src/*.ts",
-			"default": "./dist/*.js"
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
 		}
 	},
 	"type": "module",
@@ -17,7 +17,6 @@
 		"zod": "^4.1.1"
 	},
 	"devDependencies": {
-		"@repo/typescript-config": "workspace:*",
-		"typescript": "5.9.2"
+		"@repo/typescript-config": "workspace:*"
 	}
 }

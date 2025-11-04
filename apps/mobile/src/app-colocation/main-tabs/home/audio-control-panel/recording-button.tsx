@@ -1,6 +1,6 @@
 /** @format */
 
-import { Button, ButtonText } from "@/components/ui/button";
+import { Button, ButtonSpinner, ButtonText } from "@/components/ui/button";
 import { Image } from "@/components/ui/image";
 import { toast } from "@/components/ui/toast";
 import { cn, getErrorMessage } from "@/lib/utils";
@@ -12,6 +12,10 @@ import {
 import { useAudioPlayer } from "expo-audio";
 import React from "react";
 import { WaveCandle } from "./wave-candle";
+import { useConversationRoom } from "../conversation-room-context";
+import { vtSocket } from "../vt-socket-manager";
+import { EVENT_EMIT_TIMEOUT } from "../constants";
+import type { EventEmitResponse } from "../types";
 
 type WaveCandleData = Pick<DataPoint, "amplitude" | "id">;
 
@@ -83,15 +87,46 @@ export const RecordingButton: React.FC<{ className?: string }> = ({
 		toast.success("permissions granted");
 	};
 
+	const { setRoomId } = useConversationRoom();
+	const [isStartingRecording, setIsStartingRecording] = React.useState(false);
 	const handleStart = async () => {
-		const { status } =
-			await ExpoAudioStreamModule.requestPermissionsAsync();
-		if (status !== "granted") {
-			await handleSetupPermissions();
+		const toastId = "start-recording";
+		try {
+			toast.loading("Starting conversation", {
+				id: toastId,
+				duration: Infinity,
+			});
+			setIsStartingRecording(true);
+			const { status } =
+				await ExpoAudioStreamModule.requestPermissionsAsync();
+			if (status !== "granted") {
+				await handleSetupPermissions();
+			}
+			const response = (await vtSocket
+				.timeout(EVENT_EMIT_TIMEOUT)
+				.emitWithAck(
+					"conversation:start",
+				)) as EventEmitResponse<"conversation:start">;
+			if (!response.success) {
+				throw new Error(response.message);
+			}
+			console.log("conversation started", response.data.conversationId);
+
+			setRoomId(response.data.conversationId);
+			await startRecording({ enableProcessing: true });
+			toast.info("Recording started", {
+				id: toastId,
+			});
+			player.replace(null);
+		} catch (error) {
+			toast.error("Unable to start conversation", {
+				id: toastId,
+				description: getErrorMessage(error),
+			});
+			console.error(error);
+		} finally {
+			setIsStartingRecording(false);
 		}
-		await startRecording({ enableProcessing: true });
-		toast.info("Recording started");
-		player.replace(null);
 	};
 
 	const handlePlayback = () => {
@@ -165,6 +200,18 @@ export const RecordingButton: React.FC<{ className?: string }> = ({
 		return [...padding, ...rawData] satisfies WaveCandleData[];
 	}, [analysisData?.dataPoints, isRecording]);
 
+	const recordingState: "starting" | "stopped" | "recording" = (() => {
+		if (isRecording) {
+			return "recording";
+		}
+
+		if (isStartingRecording) {
+			return "starting";
+		}
+
+		return "stopped";
+	})();
+
 	return (
 		<Button
 			ref={(view) => {
@@ -199,36 +246,42 @@ export const RecordingButton: React.FC<{ className?: string }> = ({
 				className="absolute inset-0"
 			/>
 
-			{visibleDataPoints.map(({ id, amplitude }) => {
-				let scaledAmplitude: number;
-
-				if (isRecording) {
-					const clampedCanvasHeight = 0.6 * CANVAS_HEIGHT;
-					// Existing human voice scaling logic
-					if (amplitude <= HUMAN_VOICE_MAX) {
-						scaledAmplitude =
-							((amplitude - HUMAN_VOICE_MIN) /
-								(HUMAN_VOICE_MAX - HUMAN_VOICE_MIN)) *
-							(clampedCanvasHeight *
-								NORMAL_SPEECH_HEIGHT_PROPORTION);
-					} else {
-						const baseHeight =
-							clampedCanvasHeight *
-							NORMAL_SPEECH_HEIGHT_PROPORTION;
-						const extraHeight =
-							clampedCanvasHeight *
-							(1 - NORMAL_SPEECH_HEIGHT_PROPORTION);
-						const logFactor =
-							Math.log(amplitude / HUMAN_VOICE_MAX) /
-							Math.log(ABSOLUTE_MAX / HUMAN_VOICE_MAX);
-						scaledAmplitude = baseHeight + extraHeight * logFactor;
-					}
-				} else {
-					scaledAmplitude = amplitude;
+			{(() => {
+				if (recordingState === "starting") {
+					return <ButtonSpinner className="text-typography-0" />;
 				}
+				return visibleDataPoints.map(({ id, amplitude }) => {
+					let scaledAmplitude: number;
 
-				return <WaveCandle key={id} amplitude={scaledAmplitude} />;
-			})}
+					if (isRecording) {
+						const clampedCanvasHeight = 0.6 * CANVAS_HEIGHT;
+						// Existing human voice scaling logic
+						if (amplitude <= HUMAN_VOICE_MAX) {
+							scaledAmplitude =
+								((amplitude - HUMAN_VOICE_MIN) /
+									(HUMAN_VOICE_MAX - HUMAN_VOICE_MIN)) *
+								(clampedCanvasHeight *
+									NORMAL_SPEECH_HEIGHT_PROPORTION);
+						} else {
+							const baseHeight =
+								clampedCanvasHeight *
+								NORMAL_SPEECH_HEIGHT_PROPORTION;
+							const extraHeight =
+								clampedCanvasHeight *
+								(1 - NORMAL_SPEECH_HEIGHT_PROPORTION);
+							const logFactor =
+								Math.log(amplitude / HUMAN_VOICE_MAX) /
+								Math.log(ABSOLUTE_MAX / HUMAN_VOICE_MAX);
+							scaledAmplitude =
+								baseHeight + extraHeight * logFactor;
+						}
+					} else {
+						scaledAmplitude = amplitude;
+					}
+
+					return <WaveCandle key={id} amplitude={scaledAmplitude} />;
+				});
+			})()}
 		</Button>
 	);
 };

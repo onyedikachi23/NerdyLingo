@@ -20,7 +20,7 @@ import {
 } from "@/components/ui-common/flow-button";
 import { ButtonSpinner } from "@/components/ui/button";
 import { FormControl } from "@/components/ui/form-control";
-import { EmailSignupFieldsSchema } from "@repo/shared/auth";
+import { EmailSignupFieldsSchema } from "@repo/shared";
 import { useForm } from "@tanstack/react-form";
 import { ChevronRight } from "lucide-react-native";
 
