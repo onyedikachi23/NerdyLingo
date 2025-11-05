@@ -11,23 +11,22 @@ import {
 } from "@siteed/expo-audio-studio";
 import { useAudioPlayer } from "expo-audio";
 import React from "react";
-import { WaveCandle } from "./wave-candle";
-import { useConversationRoom } from "../conversation-room-context";
-import { vtSocket } from "../vt-socket-manager";
-import { EVENT_EMIT_TIMEOUT } from "../constants";
-import type { EventEmitResponse } from "../types";
+import { EVENT_EMIT_TIMEOUT } from "../../constants";
+import { useConversationRoom } from "../../conversation-room-context";
+import type { EventEmitResponse } from "../../types";
+import { vtSocket } from "../../vt-socket-manager";
+import { WaveCandle } from "../wave-candle";
+import {
+	AMPLITUDE_MAX,
+	CANDLES_CANVAS_HEIGHT,
+	HUMAN_VOICE_MAX,
+	HUMAN_VOICE_MIN,
+	NORMAL_SPEECH_HEIGHT_PROPORTION,
+	VISIBLE_CANDLES_COUNT,
+} from "./constants";
+import { useEmitUtterance } from "./hooks/use-emit-utterance";
 
 type WaveCandleData = Pick<DataPoint, "amplitude" | "id">;
-
-const VISIBLE_CANDLES_COUNT = 5;
-// Define reference values for human voice range
-const HUMAN_VOICE_MIN = 0.01; // Adjust based on your typical minimum amplitude for speech
-const HUMAN_VOICE_MAX = 0.2; // Maximum amplitude for normal speech
-const ABSOLUTE_MAX = 0.8; // Maximum possible amplitude
-
-// Define the proportion of canvas height for normal speech
-const NORMAL_SPEECH_HEIGHT_PROPORTION = 0.95; // 95% of canvas height for normal speech
-const CANVAS_HEIGHT = 100;
 
 const preRecordingCandleData = [
 	{ id: 0, amplitude: 10 },
@@ -49,6 +48,8 @@ export const RecordingButton: React.FC<{ className?: string }> = ({
 	} = useSharedAudioRecorder();
 
 	const player = useAudioPlayer();
+
+	useEmitUtterance();
 
 	React.useEffect(() => {
 		const prepare = async () => {
@@ -87,7 +88,7 @@ export const RecordingButton: React.FC<{ className?: string }> = ({
 		toast.success("permissions granted");
 	};
 
-	const { setRoomId } = useConversationRoom();
+	const { roomId, setRoomId } = useConversationRoom();
 	const [isStartingRecording, setIsStartingRecording] = React.useState(false);
 	const handleStart = async () => {
 		const toastId = "start-recording";
@@ -110,14 +111,13 @@ export const RecordingButton: React.FC<{ className?: string }> = ({
 			if (!response.success) {
 				throw new Error(response.message);
 			}
-			console.log("conversation started", response.data.conversationId);
 
 			setRoomId(response.data.conversationId);
 			await startRecording({ enableProcessing: true });
 			toast.info("Recording started", {
 				id: toastId,
 			});
-			player.replace(null);
+			// player.replace(null); This causes an error: https://github.com/expo/expo/issues/39466#issuecomment-3488651453
 		} catch (error) {
 			toast.error("Unable to start conversation", {
 				id: toastId,
@@ -152,25 +152,47 @@ export const RecordingButton: React.FC<{ className?: string }> = ({
 	};
 
 	const handleStop = async () => {
-		const result = await stopRecording();
-		if (!result) {
-			toast.error("Unable to retrieve recorded audio");
-			player.replace(null);
-			return;
-		}
+		try {
+			if (!roomId) {
+				throw new Error("Conversation room in an unexpected state");
+			}
+			const emitPromise = vtSocket
+				.timeout(EVENT_EMIT_TIMEOUT)
+				.emitWithAck("conversation:stop", {
+					conversationId: roomId,
+				}) as Promise<EventEmitResponse<"conversation:stop">>;
+			const [recordingResult, emitResponse] = await Promise.all([
+				stopRecording(),
+				emitPromise,
+			]);
+			if (!recordingResult) {
+				throw new Error("Unable to retrieve recorded audio", {
+					cause: recordingResult,
+				});
+			}
+			if (!emitResponse.success) {
+				throw new Error(emitResponse.message, {
+					cause: emitResponse,
+				});
+			}
 
-		player.replace(result.fileUri);
-		const toastId = "recording-stopped-toast";
-		toast.success("Recording saved", {
-			id: toastId,
-			action: {
-				label: "Play recording",
-				onClick: () => {
-					handlePlayback();
-					toast.dismiss(toastId);
+			player.replace(recordingResult.fileUri);
+			const toastId = "recording-stopped-toast";
+			toast.success("Recording saved", {
+				id: toastId,
+				action: {
+					label: "Play recording",
+					onClick: () => {
+						handlePlayback();
+						toast.dismiss(toastId);
+					},
 				},
-			},
-		});
+			});
+		} catch (error) {
+			toast.error("Error occurred stopping conversation", {
+				description: getErrorMessage(error),
+			});
+		}
 	};
 
 	const visibleDataPoints = React.useMemo(() => {
@@ -235,7 +257,10 @@ export const RecordingButton: React.FC<{ className?: string }> = ({
 				"relative flex aspect-square flex-row items-center justify-center gap-1 rounded-full px-0 data-[active=true]:scale-[0.97]",
 				className,
 			)}
-			style={{ height: CANVAS_HEIGHT, width: CANVAS_HEIGHT }}>
+			style={{
+				height: CANDLES_CANVAS_HEIGHT,
+				width: CANDLES_CANVAS_HEIGHT,
+			}}>
 			<Image
 				accessibilityLabel="Wave button svg"
 				importantForAccessibility="no-hide-descendants"
@@ -254,7 +279,7 @@ export const RecordingButton: React.FC<{ className?: string }> = ({
 					let scaledAmplitude: number;
 
 					if (isRecording) {
-						const clampedCanvasHeight = 0.6 * CANVAS_HEIGHT;
+						const clampedCanvasHeight = 0.6 * CANDLES_CANVAS_HEIGHT;
 						// Existing human voice scaling logic
 						if (amplitude <= HUMAN_VOICE_MAX) {
 							scaledAmplitude =
@@ -271,7 +296,7 @@ export const RecordingButton: React.FC<{ className?: string }> = ({
 								(1 - NORMAL_SPEECH_HEIGHT_PROPORTION);
 							const logFactor =
 								Math.log(amplitude / HUMAN_VOICE_MAX) /
-								Math.log(ABSOLUTE_MAX / HUMAN_VOICE_MAX);
+								Math.log(AMPLITUDE_MAX / HUMAN_VOICE_MAX);
 							scaledAmplitude =
 								baseHeight + extraHeight * logFactor;
 						}

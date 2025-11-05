@@ -10,7 +10,22 @@ interface ClientToServerEvents {
 				| ApiErrorResponse
 		) => void
 	) => void;
-	"conversation:stop": (data: { conversationId: string }) => void;
+	"conversation:stop": (
+		data: { conversationId: string },
+		callback: (response: ApiSuccessResponse | ApiErrorResponse) => void
+	) => void;
+	"utterance:start": (
+		data: {
+			conversationId: string;
+		},
+		callback: (response: ApiSuccessResponse | ApiErrorResponse) => void
+	) => void;
+	"utterance:stop": (
+		data: {
+			conversationId: string;
+		},
+		callback: (response: ApiSuccessResponse | ApiErrorResponse) => void
+	) => void;
 }
 
 type CTSEventResponse<E extends keyof ClientToServerEvents> =

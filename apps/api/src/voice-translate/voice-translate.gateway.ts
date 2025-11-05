@@ -71,5 +71,39 @@ export class VoiceTranslateGateway
 			client.data.user.name,
 			data.conversationId,
 		);
+		return {
+			success: true,
+			message: "Conversation stopped",
+		};
+	}
+
+	@TypedSubscribeMessage("utterance:start")
+	async handleStartUtterance(
+		client: AuthenticatedSocket,
+		data: RecievedEventData<"utterance:start">,
+	): Promise<RecievedEventResponse<"utterance:start">> {
+		console.log(
+			"Utterance started by client: " + client.data.user.name,
+			data.conversationId,
+		);
+		return {
+			success: true,
+			message: "Utterance started",
+		};
+	}
+
+	@TypedSubscribeMessage("utterance:stop")
+	async handleStopUtterance(
+		client: AuthenticatedSocket,
+		data: RecievedEventData<"utterance:stop">,
+	): Promise<RecievedEventResponse<"utterance:stop">> {
+		console.log(
+			"Utterance stopped by client: " + client.data.user.name,
+			data.conversationId,
+		);
+		return {
+			success: true,
+			message: "Utterance started",
+		};
 	}
 }
