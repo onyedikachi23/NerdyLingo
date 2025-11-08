@@ -6,22 +6,22 @@ import {
 } from "@siteed/expo-audio-studio";
 import React from "react";
 import { SILENCE_WINDOW_COUNT, UTTERANCE_THRESHOLD } from "../constants";
-import { toast } from "@/components/ui/toast";
 import { useEffectEvent } from "@/hooks/use-effect-event";
 import { useConversationRoom } from "../../../conversation-room-context";
 import { vtSocket } from "../../../vt-socket-manager";
 import { EVENT_EMIT_TIMEOUT } from "../../../constants";
+import { useAudioControls } from "../../audio-controls-context";
+import { toast } from "@/components/ui/toast";
 
 export const useEmitUtterance = () => {
-	const { isRecording, analysisData } = useSharedAudioRecorder();
-
-	const isUtteringRef = React.useRef(false);
+	const { analysisData } = useSharedAudioRecorder();
+	const { isParticipantSpeaking, setIsParticipantSpeaking } =
+		useAudioControls();
 
 	const { roomId } = useConversationRoom();
 	const onDataPointsChange = useEffectEvent(
 		async (dataPoints: DataPoint[]) => {
 			if (!roomId) {
-				toast.error("Room not ready to emit utternace");
 				return;
 			}
 
@@ -29,12 +29,15 @@ export const useEmitUtterance = () => {
 
 			// Utterance START detection
 			if (
-				!isUtteringRef.current &&
+				!isParticipantSpeaking &&
 				latestAmplitude > UTTERANCE_THRESHOLD
 			) {
+				toast.info("Start speaking", {
+					id: "start-speaking",
+				});
 				// Speech detected
-				isUtteringRef.current = true;
-				toast.info("Is uttering");
+				setIsParticipantSpeaking(true);
+
 				await vtSocket
 					.timeout(EVENT_EMIT_TIMEOUT)
 					.emitWithAck("utterance:start", {
@@ -45,7 +48,7 @@ export const useEmitUtterance = () => {
 
 			// Utterance STOP detection (Silence Window)
 			if (
-				isUtteringRef.current &&
+				isParticipantSpeaking &&
 				latestAmplitude < UTTERANCE_THRESHOLD
 			) {
 				// Check the last N data points for silence
@@ -57,9 +60,12 @@ export const useEmitUtterance = () => {
 					);
 
 				if (isSilentWindow) {
+					toast.info("Stop speaking", {
+						id: "stop-speaking",
+					});
 					// Utterance stopped
-					isUtteringRef.current = false;
-					toast.info("Utterance stopped");
+					setIsParticipantSpeaking(false);
+
 					await vtSocket
 						.timeout(EVENT_EMIT_TIMEOUT)
 						.emitWithAck("utterance:stop", {
@@ -70,11 +76,6 @@ export const useEmitUtterance = () => {
 		},
 	);
 	React.useEffect(() => {
-		// toast.info("Data points changed");
-		if (!isRecording || !analysisData?.dataPoints.length) {
-			return;
-		}
-
-		void onDataPointsChange(analysisData.dataPoints);
-	}, [analysisData?.dataPoints, isRecording, onDataPointsChange]);
+		void onDataPointsChange(analysisData?.dataPoints ?? []);
+	}, [analysisData?.dataPoints, onDataPointsChange]);
 };

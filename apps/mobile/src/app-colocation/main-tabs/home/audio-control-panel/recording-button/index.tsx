@@ -25,6 +25,8 @@ import {
 	VISIBLE_CANDLES_COUNT,
 } from "./constants";
 import { useEmitUtterance } from "./hooks/use-emit-utterance";
+import { useStreamSpeech } from "./hooks/use-stream-speech";
+import { useAudioControls } from "../audio-controls-context";
 
 type WaveCandleData = Pick<DataPoint, "amplitude" | "id">;
 
@@ -89,7 +91,10 @@ export const RecordingButton: React.FC<{ className?: string }> = ({
 	};
 
 	const { roomId, setRoomId } = useConversationRoom();
+	const { isParticipantSpeaking } = useAudioControls();
+	console.log("button ispartcipantspeaking", isParticipantSpeaking);
 	const [isStartingRecording, setIsStartingRecording] = React.useState(false);
+	const onSpeechStream = useStreamSpeech();
 	const handleStart = async () => {
 		const toastId = "start-recording";
 		try {
@@ -113,7 +118,16 @@ export const RecordingButton: React.FC<{ className?: string }> = ({
 			}
 
 			setRoomId(response.data.conversationId);
-			await startRecording({ enableProcessing: true });
+			await startRecording({
+				enableProcessing: true,
+				onAudioStream: async ({ data }) => {
+					if (typeof data !== "string") {
+						toast.error("speech data not string");
+						return;
+					}
+					await onSpeechStream(data);
+				},
+			});
 			toast.info("Recording started", {
 				id: toastId,
 			});

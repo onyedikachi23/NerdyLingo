@@ -106,4 +106,21 @@ export class VoiceTranslateGateway
 			message: "Utterance started",
 		};
 	}
+
+	@TypedSubscribeMessage("audio:speech")
+	async handleSpeechAudio(
+		client: AuthenticatedSocket,
+		data: RecievedEventData<"audio:speech">,
+	): Promise<RecievedEventResponse<"audio:speech">> {
+		console.log(
+			"Utterance stopped by client: " + client.data.user.name,
+			data.conversationId,
+		);
+		console.log("audio chunk", data.audioChunk);
+
+		return {
+			success: true,
+			message: "Utterance started",
+		};
+	}
 }

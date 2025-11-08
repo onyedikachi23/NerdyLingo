@@ -26,6 +26,14 @@ interface ClientToServerEvents {
 		},
 		callback: (response: ApiSuccessResponse | ApiErrorResponse) => void
 	) => void;
+	"audio:speech": (
+		data: {
+			conversationId: string;
+			/**A base64 string */
+			audioChunk: string;
+		},
+		callback: (response: ApiSuccessResponse | ApiErrorResponse) => void
+	) => void;
 }
 
 type CTSEventResponse<E extends keyof ClientToServerEvents> =
