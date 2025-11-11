@@ -37,7 +37,7 @@ export class VoiceTranslationService {
 		};
 	}
 
-	async startUtterance(conversationId: string): Promise<void> {
+	async startConversation(conversationId: string): Promise<void> {
 		await this.deepgramService.startLiveTranscription(conversationId);
 	}
 
@@ -49,7 +49,7 @@ export class VoiceTranslationService {
 		conversationId: string,
 	): Promise<{ originalText: string; translatedText: string }> {
 		const originalText =
-			await this.deepgramService.stopLiveTranscription(conversationId);
+			await this.deepgramService.finalizeUtterance(conversationId);
 
 		// TODO: Call DeepL translation
 		// TODO: Call Deepgram TTS
@@ -58,5 +58,10 @@ export class VoiceTranslationService {
 			originalText,
 			translatedText: "TODO: Implement translation",
 		};
+	}
+
+	async stopConversation(conversationId: string): Promise<void> {
+		await this.deepgramService.closeConnection(conversationId);
+		this.audioBufferService.clearBuffer(conversationId);
 	}
 }

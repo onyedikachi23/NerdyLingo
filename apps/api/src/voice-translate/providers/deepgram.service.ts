@@ -168,6 +168,75 @@ export class DeepgramService {
 		liveConn.connection.send(audioBuffer.buffer);
 	}
 
+	async finalizeUtterance(conversationId: string): Promise<string> {
+		const liveConn = this.liveConnections.get(conversationId);
+
+		if (!liveConn) {
+			throw new Error(
+				`No Deepgram connection found for ${conversationId}`,
+			);
+		}
+
+		// Send Finalize message to flush pending audio
+		liveConn.connection.send(JSON.stringify({ type: "Finalize" }));
+
+		// Wait for finalized transcripts with timeout
+		await new Promise<void>((resolve) => {
+			const timeout = setTimeout(() => resolve(), 1000);
+
+			const transcriptHandler = (data: LiveTranscriptionEvent) => {
+				// Check if this is a response from Finalize
+				if (data.from_finalize === true) {
+					clearTimeout(timeout);
+					// Remove this one-time handler
+					liveConn.connection.off(
+						LiveTranscriptionEvents.Transcript,
+						transcriptHandler,
+					);
+					resolve();
+				}
+			};
+
+			liveConn.connection.on(
+				LiveTranscriptionEvents.Transcript,
+				transcriptHandler,
+			);
+		});
+
+		const fullTranscript = liveConn.transcripts.join(" ");
+		this.logger.log(`Transcription: "${fullTranscript}"`);
+
+		// Clear transcripts for next utterance
+		liveConn.transcripts = [];
+
+		return fullTranscript;
+	}
+
+	async closeConnection(conversationId: string): Promise<void> {
+		const liveConn = this.liveConnections.get(conversationId);
+
+		if (!liveConn) {
+			this.logger.warn(
+				`No Deepgram connection found for ${conversationId}`,
+			);
+			return;
+		}
+
+		liveConn.connection.requestClose();
+
+		// Wait for close with timeout
+		await new Promise((resolve) => {
+			const timeout = setTimeout(resolve, 1000);
+			liveConn.connection.on("close", () => {
+				clearTimeout(timeout);
+				resolve(null);
+			});
+		});
+
+		this.liveConnections.delete(conversationId);
+		this.logger.log(`Deepgram connection closed: ${conversationId}`);
+	}
+
 	async stopLiveTranscription(conversationId: string): Promise<string> {
 		const liveConn = this.liveConnections.get(conversationId);
 

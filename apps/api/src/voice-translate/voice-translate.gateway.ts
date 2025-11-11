@@ -7,6 +7,7 @@ import {
 	WebSocketGateway,
 } from "@nestjs/websockets";
 import { Logger } from "@nestjs/common";
+import { randomUUID } from "crypto";
 
 import type {
 	AuthenticatedSocket,
@@ -59,11 +60,16 @@ export class VoiceTranslateGateway
 	): Promise<RecievedEventResponse<"conversation:start">> {
 		this.logger.log(`Conversation started by: ${client.data.user.name}`);
 
+		const conversationId = randomUUID();
+
+		// Start Deepgram connection for this conversation
+		await this.vtService.startConversation(conversationId);
+
 		return {
 			success: true,
 			message: "Conversation started",
 			data: {
-				conversationId: "fuckkkk",
+				conversationId,
 			},
 		};
 	}
@@ -77,7 +83,8 @@ export class VoiceTranslateGateway
 			`Conversation stopped by ${client.data.user.name}: ${data.conversationId}`,
 		);
 
-		this.vtService.clearBuffer(data.conversationId);
+		// Close Deepgram connection and clear buffers
+		await this.vtService.stopConversation(data.conversationId);
 
 		return {
 			success: true,
@@ -86,16 +93,15 @@ export class VoiceTranslateGateway
 	}
 
 	@TypedSubscribeMessage("utterance:start")
-	async handleStartUtterance(
+	handleStartUtterance(
 		client: AuthenticatedSocket,
 		data: RecievedEventData<"utterance:start">,
-	): Promise<RecievedEventResponse<"utterance:start">> {
+	): RecievedEventResponse<"utterance:start"> {
 		this.logger.log(
 			`Utterance started by ${client.data.user.name}: ${data.conversationId}`,
 		);
 
-		// Start Deepgram live connection
-		await this.vtService.startUtterance(data.conversationId);
+		// Connection already open from conversation:start, nothing to do here
 
 		return {
 			success: true,
