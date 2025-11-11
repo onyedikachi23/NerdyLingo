@@ -1,11 +1,11 @@
 /** @format */
 
-import { useSharedAudioRecorder } from "@siteed/expo-audio-studio";
 import React from "react";
 
+export type UtteranceState = "idle" | "starting" | "speaking" | "stopping";
+
 interface AudioControlsContextType {
-	isParticipantSpeaking: boolean;
-	setIsParticipantSpeaking: React.Dispatch<React.SetStateAction<boolean>>;
+	utteranceStateRef: React.MutableRefObject<UtteranceState>;
 }
 
 const AudioControlsContext =
@@ -13,17 +13,25 @@ const AudioControlsContext =
 
 const AudioControlsProvider = ({
 	children,
+	roomId,
 }: {
 	children?: React.ReactNode;
+	roomId: string | null;
 }) => {
-	const [isSpeaking, setIsParticipantSpeaking] = React.useState(false);
+	// Use ref for internal control state - no re-renders needed
+	const utteranceStateRef = React.useRef<UtteranceState>("idle");
 
-	const { isRecording } = useSharedAudioRecorder();
-	const isParticipantSpeaking = isRecording ? isSpeaking : false;
+	// Reset state when conversation ends (roomId cleared)
+	React.useEffect(() => {
+		if (!roomId) {
+			console.log("[DEBUG] Conversation ended, resetting utterance state to idle");
+			utteranceStateRef.current = "idle";
+		}
+	}, [roomId]);
 
 	const ctxValue: AudioControlsContextType = React.useMemo(
-		() => ({ isParticipantSpeaking, setIsParticipantSpeaking }),
-		[isParticipantSpeaking],
+		() => ({ utteranceStateRef }),
+		[],
 	);
 
 	return (

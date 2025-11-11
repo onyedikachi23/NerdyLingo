@@ -8,13 +8,16 @@ import { MicAndVolumeDropdown } from "./mic-and-volume-dropdown";
 import { ModesDropdown } from "./modes-dropdown";
 import { RecordingButton } from "./recording-button";
 import { AudioControlsProvider } from "./audio-controls-context";
+import { useConversationRoom } from "../conversation-room-context";
 
 export const AudioControlPanel: React.FC<{ className?: string }> = ({
 	className,
 }) => {
+	const { roomId } = useConversationRoom();
+
 	return (
 		<AudioRecorderProvider>
-			<AudioControlsProvider>
+			<AudioControlsProvider roomId={roomId}>
 				<Box
 					className={cn(
 						"flex-row items-end justify-center",

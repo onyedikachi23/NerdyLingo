@@ -1,23 +1,38 @@
 /** @format */
 
-import React from "react";
+import { toast } from "@/components/ui/toast";
+import { useEffectEvent } from "@/hooks/use-effect-event";
+import { EVENT_EMIT_TIMEOUT } from "../../../constants";
 import { useConversationRoom } from "../../../conversation-room-context";
 import { vtSocket } from "../../../vt-socket-manager";
-import { EVENT_EMIT_TIMEOUT } from "../../../constants";
-import { toast } from "@/components/ui/toast";
 import { useAudioControls } from "../../audio-controls-context";
-import { useEffectEvent } from "@/hooks/use-effect-event";
 
 export const useStreamSpeech = () => {
 	const { roomId } = useConversationRoom();
-	const { isParticipantSpeaking } = useAudioControls();
+	const { utteranceStateRef } = useAudioControls();
 
-	// useEffectEvent solves the issue of isParticipantSpeaking being stale
 	const onSpeaking = useEffectEvent(async (audioChunk: string) => {
-		if (!(roomId && isParticipantSpeaking)) {
+		const currentState = utteranceStateRef.current;
+		const isSpeaking = currentState === "speaking";
+
+		console.log(
+			"[DEBUG] useStreamSpeech guard check:",
+			"roomId:",
+			roomId,
+			"utteranceState:",
+			currentState,
+			"at",
+			new Date().toISOString(),
+		);
+
+		if (!(roomId && isSpeaking)) {
+			console.log("[DEBUG] useStreamSpeech: Guard blocked audio chunk");
 			return;
 		}
 
+		console.log(
+			"[DEBUG] useStreamSpeech: Guard passed, emitting audio:speech",
+		);
 		toast.info("Streaming speech", {
 			id: "speech-stream",
 		});

@@ -6,6 +6,7 @@ import {
 	OnGatewayDisconnect,
 	WebSocketGateway,
 } from "@nestjs/websockets";
+import { Logger } from "@nestjs/common";
 
 import type {
 	AuthenticatedSocket,
@@ -14,6 +15,7 @@ import type {
 } from "./types";
 import { TypedSubscribeMessage } from "./voice-translate.decorator";
 import { WSAuthGuard } from "./ws-auth-guard";
+import { VoiceTranslationService } from "./voice-translation.service";
 
 @WebSocketGateway({
 	namespace: "voice-translate",
@@ -21,15 +23,20 @@ import { WSAuthGuard } from "./ws-auth-guard";
 export class VoiceTranslateGateway
 	implements OnGatewayConnection, OnGatewayDisconnect
 {
-	constructor(private readonly wsAuthGuard: WSAuthGuard) {}
+	private readonly logger = new Logger(VoiceTranslateGateway.name);
+
+	constructor(
+		private readonly wsAuthGuard: WSAuthGuard,
+		private readonly vtService: VoiceTranslationService,
+	) {}
 
 	async handleConnection(client: AuthenticatedSocket) {
 		try {
 			// Manually authenticate since guards don't run on connection
 			await this.wsAuthGuard.authenticateConnection(client);
-			console.log("client connected", client.data.user.name);
+			this.logger.log(`Client connected: ${client.data.user.name}`);
 		} catch (error) {
-			console.error("Couldn't connect client", error);
+			this.logger.error("Couldn't connect client", error);
 
 			client.emit("error", {
 				success: false,
@@ -43,14 +50,14 @@ export class VoiceTranslateGateway
 	}
 
 	handleDisconnect(client: AuthenticatedSocket) {
-		console.log("Client disconnected", client.id);
+		this.logger.log(`Client disconnected: ${client.id}`);
 	}
 
 	@TypedSubscribeMessage("conversation:start")
 	async handleStartConversation(
 		client: AuthenticatedSocket,
 	): Promise<RecievedEventResponse<"conversation:start">> {
-		console.log("conversation started by client: " + client.data.user.name);
+		this.logger.log(`Conversation started by: ${client.data.user.name}`);
 
 		return {
 			success: true,
@@ -66,11 +73,12 @@ export class VoiceTranslateGateway
 		client: AuthenticatedSocket,
 		data: RecievedEventData<"conversation:stop">,
 	): Promise<RecievedEventResponse<"conversation:stop">> {
-		console.log(
-			"coversation stopped: ",
-			client.data.user.name,
-			data.conversationId,
+		this.logger.log(
+			`Conversation stopped by ${client.data.user.name}: ${data.conversationId}`,
 		);
+
+		this.vtService.clearBuffer(data.conversationId);
+
 		return {
 			success: true,
 			message: "Conversation stopped",
@@ -82,10 +90,13 @@ export class VoiceTranslateGateway
 		client: AuthenticatedSocket,
 		data: RecievedEventData<"utterance:start">,
 	): Promise<RecievedEventResponse<"utterance:start">> {
-		console.log(
-			"Utterance started by client: " + client.data.user.name,
-			data.conversationId,
+		this.logger.log(
+			`Utterance started by ${client.data.user.name}: ${data.conversationId}`,
 		);
+
+		// Start Deepgram live connection
+		await this.vtService.startUtterance(data.conversationId);
+
 		return {
 			success: true,
 			message: "Utterance started",
@@ -97,30 +108,32 @@ export class VoiceTranslateGateway
 		client: AuthenticatedSocket,
 		data: RecievedEventData<"utterance:stop">,
 	): Promise<RecievedEventResponse<"utterance:stop">> {
-		console.log(
-			"Utterance stopped by client: " + client.data.user.name,
-			data.conversationId,
+		this.logger.log(
+			`Utterance stopped by ${client.data.user.name}: ${data.conversationId}`,
 		);
+
+		// Close Deepgram, get transcript
+		const result = await this.vtService.stopUtterance(data.conversationId);
+
+		this.logger.log(`Transcription: ${result.originalText}`);
+
 		return {
 			success: true,
-			message: "Utterance started",
+			message: "Utterance stopped",
 		};
 	}
 
 	@TypedSubscribeMessage("audio:speech")
 	async handleSpeechAudio(
-		client: AuthenticatedSocket,
+		_client: AuthenticatedSocket,
 		data: RecievedEventData<"audio:speech">,
 	): Promise<RecievedEventResponse<"audio:speech">> {
-		console.log(
-			"Utterance stopped by client: " + client.data.user.name,
-			data.conversationId,
-		);
-		console.log("audio chunk", data.audioChunk);
+		// Forward chunk to Deepgram (don't buffer)
+		this.vtService.processAudioChunk(data.conversationId, data.audioChunk);
 
 		return {
 			success: true,
-			message: "Utterance started",
+			message: "Audio chunk received",
 		};
 	}
 }
