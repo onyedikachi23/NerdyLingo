@@ -15,6 +15,7 @@ interface LiveConnection {
 	connection: ListenLiveClient;
 	transcripts: string[];
 	isOpen: boolean;
+	keepAliveInterval: NodeJS.Timeout | null;
 }
 
 @Injectable()
@@ -98,6 +99,7 @@ export class DeepgramService {
 			connection,
 			transcripts: [],
 			isOpen: false,
+			keepAliveInterval: null,
 		};
 
 		// Store connection early
@@ -149,10 +151,19 @@ export class DeepgramService {
 								typeof error === "string"
 									? error
 									: String(error),
+								{ cause: error },
 							),
 				);
 			});
 		});
+
+		// Start KeepAlive timer (send every 4 seconds)
+		liveConn.keepAliveInterval = setInterval(() => {
+			if (liveConn.isOpen) {
+				liveConn.connection.send(JSON.stringify({ type: "KeepAlive" }));
+				this.logger.debug(`KeepAlive sent: ${conversationId}`);
+			}
+		}, 4000);
 	}
 
 	sendAudioChunk(conversationId: string, audioChunk: string): void {
@@ -220,6 +231,11 @@ export class DeepgramService {
 				`No Deepgram connection found for ${conversationId}`,
 			);
 			return;
+		}
+
+		if (liveConn.keepAliveInterval) {
+			clearInterval(liveConn.keepAliveInterval);
+			liveConn.keepAliveInterval = null;
 		}
 
 		liveConn.connection.requestClose();
