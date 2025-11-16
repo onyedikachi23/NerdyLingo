@@ -13,6 +13,7 @@ import { EVENT_EMIT_TIMEOUT } from "../../../constants";
 import { useAudioControls } from "../../audio-controls-context";
 import { toast } from "@/components/ui/toast";
 import { getErrorMessage } from "@/lib/utils";
+import type { EmittedEventResponse } from "../../../types";
 
 export const useEmitUtterance = () => {
 	const { analysisData } = useSharedAudioRecorder();
@@ -41,8 +42,9 @@ export const useEmitUtterance = () => {
 			);
 
 			// Utterance START detection
-			const isIdle = currentState === "idle";
-			const amplitudeAboveThreshold = latestAmplitude > UTTERANCE_THRESHOLD;
+			const isIdle = currentState.status === "idle";
+			const amplitudeAboveThreshold =
+				latestAmplitude > UTTERANCE_THRESHOLD;
 
 			if (isIdle && amplitudeAboveThreshold) {
 				console.log(
@@ -53,14 +55,17 @@ export const useEmitUtterance = () => {
 				});
 
 				// Set state to 'starting' to prevent duplicate emissions
-				utteranceStateRef.current = "starting";
+				utteranceStateRef.current = {
+					...currentState,
+					status: "starting",
+				};
 
 				try {
-					const response = await vtSocket
+					const response = (await vtSocket
 						.timeout(EVENT_EMIT_TIMEOUT)
 						.emitWithAck("utterance:start", {
 							conversationId: roomId,
-						});
+						})) as EmittedEventResponse<"utterance:start">;
 
 					if (!response.success) {
 						throw new Error(response.message, { cause: response });
@@ -70,7 +75,10 @@ export const useEmitUtterance = () => {
 					console.log(
 						"[DEBUG] useEmitUtterance: utterance:start confirmed by server, state = speaking",
 					);
-					utteranceStateRef.current = "speaking";
+					utteranceStateRef.current = {
+						status: "speaking",
+						id: response.data.utteranceId,
+					};
 				} catch (error) {
 					console.error(
 						"[DEBUG] useEmitUtterance: utterance:start failed:",
@@ -80,14 +88,15 @@ export const useEmitUtterance = () => {
 						description: getErrorMessage(error),
 					});
 					// Rollback to idle on error
-					utteranceStateRef.current = "idle";
+					utteranceStateRef.current = { status: "idle", id: null };
 				}
 				return;
 			}
 
 			// Utterance STOP detection (Silence Window)
-			const isSpeaking = currentState === "speaking";
-			const amplitudeBelowThreshold = latestAmplitude < UTTERANCE_THRESHOLD;
+			const isSpeaking = currentState.status === "speaking";
+			const amplitudeBelowThreshold =
+				latestAmplitude < UTTERANCE_THRESHOLD;
 
 			if (isSpeaking && amplitudeBelowThreshold) {
 				// Check the last N data points for silence
@@ -107,24 +116,33 @@ export const useEmitUtterance = () => {
 					});
 
 					// Set state to 'stopping' to prevent duplicate emissions
-					utteranceStateRef.current = "stopping";
+					utteranceStateRef.current = {
+						...currentState,
+						status: "stopping",
+					};
 
 					try {
 						const response = await vtSocket
 							.timeout(EVENT_EMIT_TIMEOUT)
 							.emitWithAck("utterance:stop", {
 								conversationId: roomId,
+								utteranceId: currentState.id,
 							});
 
 						if (!response.success) {
-							throw new Error(response.message, { cause: response });
+							throw new Error(response.message, {
+								cause: response,
+							});
 						}
 
 						// Only set to 'idle' AFTER server confirms
 						console.log(
 							"[DEBUG] useEmitUtterance: utterance:stop confirmed by server, state = idle",
 						);
-						utteranceStateRef.current = "idle";
+						utteranceStateRef.current = {
+							status: "idle",
+							id: null,
+						};
 					} catch (error) {
 						console.error(
 							"[DEBUG] useEmitUtterance: utterance:stop failed:",
@@ -134,7 +152,10 @@ export const useEmitUtterance = () => {
 							description: getErrorMessage(error),
 						});
 						// Rollback to speaking on error
-						utteranceStateRef.current = "speaking";
+						utteranceStateRef.current = {
+							...currentState,
+							status: "speaking",
+						};
 					}
 				}
 			}

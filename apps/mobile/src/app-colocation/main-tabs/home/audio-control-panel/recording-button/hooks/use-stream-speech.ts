@@ -13,7 +13,7 @@ export const useStreamSpeech = () => {
 
 	const onSpeaking = useEffectEvent(async (audioChunk: string) => {
 		const currentState = utteranceStateRef.current;
-		const isSpeaking = currentState === "speaking";
+		const isSpeaking = currentState.status === "speaking";
 
 		console.log(
 			"[DEBUG] useStreamSpeech guard check:",

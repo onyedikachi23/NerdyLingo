@@ -1,6 +1,7 @@
 /** @format */
 
-import { ApiErrorResponse, ApiSuccessResponse } from "../index.js";
+import type { ApiErrorResponse, ApiSuccessResponse } from "../index.js";
+import type { Utterance } from "api/src/voice-translate/voice-translate.schema.js";
 
 interface ClientToServerEvents {
 	"conversation:start": (
@@ -18,11 +19,16 @@ interface ClientToServerEvents {
 		data: {
 			conversationId: string;
 		},
-		callback: (response: ApiSuccessResponse | ApiErrorResponse) => void
+		callback: (
+			response:
+				| ApiSuccessResponse<{ data: { utteranceId: string } }>
+				| ApiErrorResponse
+		) => void
 	) => void;
 	"utterance:stop": (
 		data: {
 			conversationId: string;
+			utteranceId: string;
 		},
 		callback: (response: ApiSuccessResponse | ApiErrorResponse) => void
 	) => void;
@@ -54,13 +60,17 @@ type CTSEventData<E extends keyof ClientToServerEvents> =
 		: never;
 
 interface ServerToClientEvents {
-	"utterance:result": () => void;
+	"utterance:result": (data: Utterance) => void;
 	error: (data: ApiErrorResponse) => void;
 }
 
+type STCEventData<E extends keyof ServerToClientEvents> =
+	ServerToClientEvents[E] extends (data: infer Data) => void ? Data : never;
+
 export type {
 	ClientToServerEvents,
-	ServerToClientEvents,
 	CTSEventData,
 	CTSEventResponse,
+	ServerToClientEvents,
+	STCEventData,
 };

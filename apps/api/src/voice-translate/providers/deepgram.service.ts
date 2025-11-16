@@ -1,7 +1,5 @@
 /* @format */
 
-import { Injectable, Logger } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import {
 	createClient,
 	LiveTranscriptionEvents,
@@ -9,14 +7,18 @@ import {
 	type ListenLiveClient,
 	type LiveTranscriptionEvent,
 } from "@deepgram/sdk";
-import { writeFileSync, readFileSync } from "fs";
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { readFileSync, writeFileSync } from "fs";
 
-interface LiveConnection {
+type LiveConnection = {
 	connection: ListenLiveClient;
-	transcripts: string[];
-	isOpen: boolean;
-	keepAliveInterval: NodeJS.Timeout | null;
-}
+	transcripts: Map<string, string[]>;
+	currentUtteranceId: string | null;
+} & (
+	| { isOpen: true; keepAliveInterval: NodeJS.Timeout }
+	| { isOpen: false; keepAliveInterval: null }
+);
 
 @Injectable()
 export class DeepgramService {
@@ -97,7 +99,8 @@ export class DeepgramService {
 
 		const liveConn: LiveConnection = {
 			connection,
-			transcripts: [],
+			transcripts: new Map(),
+			currentUtteranceId: null,
 			isOpen: false,
 			keepAliveInterval: null,
 		};
@@ -118,7 +121,14 @@ export class DeepgramService {
 			(data: LiveTranscriptionEvent) => {
 				if (data.is_final && data.channel.alternatives[0]?.transcript) {
 					const transcript = data.channel.alternatives[0].transcript;
-					liveConn.transcripts.push(transcript);
+					const conn = this.liveConnections.get(conversationId);
+					const utteranceId = conn?.currentUtteranceId;
+					if (utteranceId) {
+						if (!conn.transcripts.has(utteranceId)) {
+							conn.transcripts.set(utteranceId, []);
+						}
+						conn.transcripts.get(utteranceId)?.push(transcript);
+					}
 				}
 			},
 		);
@@ -138,7 +148,29 @@ export class DeepgramService {
 				this.logger.log(
 					`Deepgram connection opened: ${conversationId}`,
 				);
-				liveConn.isOpen = true;
+
+				const existingConnection =
+					this.liveConnections.get(conversationId);
+				if (!existingConnection) {
+					throw new Error(
+						"There must be an existing connection to mark as opened",
+					);
+				}
+				const keepAliveInterval = setInterval(() => {
+					const conn = this.liveConnections.get(conversationId);
+					if (!conn?.isOpen) {
+						clearInterval(keepAliveInterval);
+						return;
+					}
+
+					conn.connection.send(JSON.stringify({ type: "KeepAlive" }));
+					this.logger.debug(`KeepAlive sent: ${conversationId}`);
+				}, 4000);
+				this.liveConnections.set(conversationId, {
+					...existingConnection,
+					isOpen: true,
+					keepAliveInterval,
+				});
 				resolve();
 			});
 
@@ -156,14 +188,32 @@ export class DeepgramService {
 				);
 			});
 		});
+	}
 
-		// Start KeepAlive timer (send every 4 seconds)
-		liveConn.keepAliveInterval = setInterval(() => {
-			if (liveConn.isOpen) {
-				liveConn.connection.send(JSON.stringify({ type: "KeepAlive" }));
-				this.logger.debug(`KeepAlive sent: ${conversationId}`);
-			}
-		}, 4000);
+	startUtterance(conversationId: string, utteranceId: string): void {
+		const conn = this.liveConnections.get(conversationId);
+
+		if (!conn) {
+			throw new Error(`No Deepgram connection for ${conversationId}`);
+		}
+
+		conn.currentUtteranceId = utteranceId;
+		conn.transcripts.set(utteranceId, []);
+		this.logger.debug(
+			`Started utterance ${utteranceId} for conversation ${conversationId}`,
+		);
+	}
+
+	getCurrentUtteranceId(
+		conversationId: string,
+	): LiveConnection["currentUtteranceId"] {
+		const conn = this.liveConnections.get(conversationId);
+		if (!conn) {
+			throw new Error(
+				`No Deepgram connection found for ${conversationId}`,
+			);
+		}
+		return conn.currentUtteranceId;
 	}
 
 	sendAudioChunk(conversationId: string, audioChunk: string): void {
@@ -176,20 +226,27 @@ export class DeepgramService {
 		}
 
 		const audioBuffer = Buffer.from(audioChunk, "base64");
+		this.logger.debug(
+			`Sending audio chunk for ${conversationId}: ${audioBuffer.length} bytes`,
+		);
+
 		liveConn.connection.send(audioBuffer.buffer);
 	}
 
-	async finalizeUtterance(conversationId: string): Promise<string> {
-		const liveConn = this.liveConnections.get(conversationId);
+	async finalizeUtterance(
+		conversationId: string,
+		utteranceId: string,
+	): Promise<string> {
+		const conn = this.liveConnections.get(conversationId);
 
-		if (!liveConn) {
+		if (!conn) {
 			throw new Error(
 				`No Deepgram connection found for ${conversationId}`,
 			);
 		}
 
 		// Send Finalize message to flush pending audio
-		liveConn.connection.send(JSON.stringify({ type: "Finalize" }));
+		conn.connection.send(JSON.stringify({ type: "Finalize" }));
 
 		// Wait for finalized transcripts with timeout
 		await new Promise<void>((resolve) => {
@@ -198,52 +255,58 @@ export class DeepgramService {
 			const transcriptHandler = (data: LiveTranscriptionEvent) => {
 				// Check if this is a response from Finalize
 				if (data.from_finalize === true) {
-					clearTimeout(timeout);
-					// Remove this one-time handler
-					liveConn.connection.off(
-						LiveTranscriptionEvents.Transcript,
-						transcriptHandler,
+					this.logger.debug(
+						"final transcript received - temporary handler",
 					);
+					clearTimeout(timeout);
 					resolve();
 				}
 			};
 
-			liveConn.connection.on(
+			conn.connection.once(
 				LiveTranscriptionEvents.Transcript,
 				transcriptHandler,
 			);
 		});
 
-		const fullTranscript = liveConn.transcripts.join(" ");
+		const utteranceTranscripts = conn.transcripts.get(utteranceId) || [];
+		const fullTranscript = utteranceTranscripts.join(" ");
 		this.logger.log(`Transcription: "${fullTranscript}"`);
 
-		// Clear transcripts for next utterance
-		liveConn.transcripts = [];
+		// Clean up
+		conn.transcripts.delete(utteranceId);
+		if (conn.currentUtteranceId === utteranceId) {
+			conn.currentUtteranceId = null;
+		}
 
 		return fullTranscript;
 	}
 
 	async closeConnection(conversationId: string): Promise<void> {
-		const liveConn = this.liveConnections.get(conversationId);
+		const conn = this.liveConnections.get(conversationId);
 
-		if (!liveConn) {
+		if (!conn) {
 			this.logger.warn(
 				`No Deepgram connection found for ${conversationId}`,
 			);
 			return;
 		}
 
-		if (liveConn.keepAliveInterval) {
-			clearInterval(liveConn.keepAliveInterval);
-			liveConn.keepAliveInterval = null;
+		if (conn.isOpen) {
+			clearInterval(conn.keepAliveInterval);
+			this.liveConnections.set(conversationId, {
+				...conn,
+				isOpen: false,
+				keepAliveInterval: null,
+			});
 		}
 
-		liveConn.connection.requestClose();
+		conn.connection.requestClose();
 
 		// Wait for close with timeout
 		await new Promise((resolve) => {
 			const timeout = setTimeout(resolve, 1000);
-			liveConn.connection.on("close", () => {
+			conn.connection.on("close", () => {
 				clearTimeout(timeout);
 				resolve(null);
 			});
@@ -251,32 +314,5 @@ export class DeepgramService {
 
 		this.liveConnections.delete(conversationId);
 		this.logger.log(`Deepgram connection closed: ${conversationId}`);
-	}
-
-	async stopLiveTranscription(conversationId: string): Promise<string> {
-		const liveConn = this.liveConnections.get(conversationId);
-
-		if (!liveConn) {
-			throw new Error(
-				`No Deepgram connection found for ${conversationId}`,
-			);
-		}
-
-		liveConn.connection.requestClose();
-
-		// Wait for close with timeout
-		await new Promise((resolve) => {
-			const timeout = setTimeout(resolve, 1000);
-			liveConn.connection.on("close", () => {
-				clearTimeout(timeout);
-				resolve(null);
-			});
-		});
-
-		const fullTranscript = liveConn.transcripts.join(" ");
-		this.logger.log(`Transcription: "${fullTranscript}"`);
-
-		this.liveConnections.delete(conversationId);
-		return fullTranscript;
 	}
 }

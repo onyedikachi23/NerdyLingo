@@ -1,13 +1,12 @@
 /** @format */
 
+import { Logger } from "@nestjs/common";
 import {
 	GatewayMetadata,
 	OnGatewayConnection,
 	OnGatewayDisconnect,
 	WebSocketGateway,
 } from "@nestjs/websockets";
-import { Logger } from "@nestjs/common";
-import { randomUUID } from "crypto";
 
 import type {
 	AuthenticatedSocket,
@@ -15,8 +14,9 @@ import type {
 	RecievedEventResponse,
 } from "./types";
 import { TypedSubscribeMessage } from "./voice-translate.decorator";
-import { WSAuthGuard } from "./ws-auth-guard";
 import { VoiceTranslationService } from "./voice-translation.service";
+import { WSAuthGuard } from "./ws-auth-guard";
+import { randomUUID } from "crypto";
 
 @WebSocketGateway({
 	namespace: "voice-translate",
@@ -60,10 +60,10 @@ export class VoiceTranslateGateway
 	): Promise<RecievedEventResponse<"conversation:start">> {
 		this.logger.log(`Conversation started by: ${client.data.user.name}`);
 
-		const conversationId = randomUUID();
-
 		// Start Deepgram connection for this conversation
-		await this.vtService.startConversation(conversationId);
+		const { id: conversationId } = await this.vtService.startConversation(
+			client.data.user.id,
+		);
 
 		return {
 			success: true,
@@ -84,7 +84,12 @@ export class VoiceTranslateGateway
 		);
 
 		// Close Deepgram connection and clear buffers
-		await this.vtService.stopConversation(data.conversationId);
+		const finalUtterance = await this.vtService.stopConversation(
+			data.conversationId,
+		);
+		if (finalUtterance) {
+			client.emit("utterance:result", finalUtterance);
+		}
 
 		return {
 			success: true,
@@ -94,34 +99,41 @@ export class VoiceTranslateGateway
 
 	@TypedSubscribeMessage("utterance:start")
 	handleStartUtterance(
-		client: AuthenticatedSocket,
+		_client: AuthenticatedSocket,
 		data: RecievedEventData<"utterance:start">,
 	): RecievedEventResponse<"utterance:start"> {
-		this.logger.log(
-			`Utterance started by ${client.data.user.name}: ${data.conversationId}`,
-		);
+		const utteranceId = randomUUID();
+		this.logger.log(`Utterance started: ${utteranceId}`);
 
-		// Connection already open from conversation:start, nothing to do here
+		this.vtService.startUtterance(data.conversationId, utteranceId);
 
 		return {
 			success: true,
 			message: "Utterance started",
+			data: {
+				utteranceId,
+			},
 		};
 	}
 
 	@TypedSubscribeMessage("utterance:stop")
 	async handleStopUtterance(
 		client: AuthenticatedSocket,
-		data: RecievedEventData<"utterance:stop">,
+		{ conversationId, utteranceId }: RecievedEventData<"utterance:stop">,
 	): Promise<RecievedEventResponse<"utterance:stop">> {
 		this.logger.log(
-			`Utterance stopped by ${client.data.user.name}: ${data.conversationId}`,
+			`Utterance stopped by ${client.data.user.name}: ${conversationId}`,
 		);
 
 		// Close Deepgram, get transcript
-		const result = await this.vtService.stopUtterance(data.conversationId);
+		const result = await this.vtService.stopUtterance(
+			conversationId,
+			utteranceId,
+		);
 
-		this.logger.log(`Transcription: ${result.originalText}`);
+		this.logger.log(`Transcription: ${result.sourceText}`);
+
+		client.emit("utterance:result", result);
 
 		return {
 			success: true,

@@ -13,7 +13,7 @@ import { useAudioPlayer } from "expo-audio";
 import React from "react";
 import { EVENT_EMIT_TIMEOUT } from "../../constants";
 import { useConversationRoom } from "../../conversation-room-context";
-import type { EventEmitResponse } from "../../types";
+import type { EmittedEventResponse } from "../../types";
 import { vtSocket } from "../../vt-socket-manager";
 import { WaveCandle } from "../wave-candle";
 import {
@@ -26,6 +26,7 @@ import {
 } from "./constants";
 import { useEmitUtterance } from "./hooks/use-emit-utterance";
 import { useStreamSpeech } from "./hooks/use-stream-speech";
+import { useAudioControls } from "../audio-controls-context";
 
 type WaveCandleData = Pick<DataPoint, "amplitude" | "id">;
 
@@ -109,7 +110,7 @@ export const RecordingButton: React.FC<{ className?: string }> = ({
 				.timeout(EVENT_EMIT_TIMEOUT)
 				.emitWithAck(
 					"conversation:start",
-				)) as EventEmitResponse<"conversation:start">;
+				)) as EmittedEventResponse<"conversation:start">;
 			if (!response.success) {
 				throw new Error(response.message);
 			}
@@ -162,28 +163,37 @@ export const RecordingButton: React.FC<{ className?: string }> = ({
 		});
 	};
 
+	const { utteranceStateRef } = useAudioControls();
 	const handleStop = async () => {
 		try {
+			const utteranceState = utteranceStateRef.current;
+			if (utteranceState.status === "speaking") {
+				utteranceStateRef.current = { status: "idle", id: null };
+			}
 			if (!roomId) {
 				throw new Error("Conversation room in an unexpected state");
 			}
-			const emitPromise = vtSocket
-				.timeout(EVENT_EMIT_TIMEOUT)
-				.emitWithAck("conversation:stop", {
-					conversationId: roomId,
-				}) as Promise<EventEmitResponse<"conversation:stop">>;
-			const [recordingResult, emitResponse] = await Promise.all([
+			const emitPromise = (
+				vtSocket
+					.timeout(EVENT_EMIT_TIMEOUT)
+					.emitWithAck("conversation:stop", {
+						conversationId: roomId,
+					}) as Promise<EmittedEventResponse<"conversation:stop">>
+			).then((response) => {
+				if (!response.success) {
+					throw new Error(response.message, {
+						cause: response,
+					});
+				}
+				setRoomId(null);
+			});
+			const [recordingResult] = await Promise.all([
 				stopRecording(),
 				emitPromise,
 			]);
 			if (!recordingResult) {
 				throw new Error("Unable to retrieve recorded audio", {
 					cause: recordingResult,
-				});
-			}
-			if (!emitResponse.success) {
-				throw new Error(emitResponse.message, {
-					cause: emitResponse,
 				});
 			}
 

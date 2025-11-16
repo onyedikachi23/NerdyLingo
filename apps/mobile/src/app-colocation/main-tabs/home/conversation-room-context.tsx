@@ -1,7 +1,7 @@
 /** @format */
 
+import { useEffectEvent } from "@/hooks/use-effect-event";
 import React from "react";
-import { EVENT_EMIT_TIMEOUT } from "./constants";
 import { vtSocket } from "./vt-socket-manager";
 
 type ConversationRoomId = string | null;
@@ -27,15 +27,18 @@ export const ConversationRoomProvider = ({
 }) => {
 	const [roomId, setRoomId] = React.useState<ConversationRoomId>(null);
 
+	const onUnmount = useEffectEvent(() => {
+		if (roomId) {
+			vtSocket.emit(
+				"conversation:stop",
+				{ conversationId: roomId },
+				() => {},
+			);
+		}
+	});
 	React.useEffect(() => {
-		return () => {
-			if (roomId) {
-				vtSocket
-					.timeout(EVENT_EMIT_TIMEOUT)
-					.emit("conversation:stop", { conversationId: roomId });
-			}
-		};
-	}, [roomId]);
+		return onUnmount;
+	}, []);
 
 	const ctxValue: ConversationRoomContextType = React.useMemo(
 		() => ({ roomId, setRoomId }),

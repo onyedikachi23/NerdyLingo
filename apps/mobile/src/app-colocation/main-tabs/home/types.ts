@@ -1,8 +1,15 @@
 /** @format */
 
-import type { ClientToServerEvents, CTSEventResponse } from "@repo/shared";
+import type {
+	ClientToServerEvents,
+	CTSEventResponse,
+	ServerToClientEvents,
+	STCEventData,
+} from "@repo/shared";
 
-type EventEmitResponse<E extends keyof ClientToServerEvents> =
+type EmittedEventResponse<E extends keyof ClientToServerEvents> =
 	CTSEventResponse<E>;
 
-export type { EventEmitResponse };
+type ReceivedEventData<E extends keyof ServerToClientEvents> = STCEventData<E>;
+
+export type { EmittedEventResponse, ReceivedEventData };

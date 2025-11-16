@@ -1,67 +1,97 @@
 /** @format */
 
-import { Injectable } from "@nestjs/common";
-import { AudioBufferService } from "./audio-buffer.service";
+import { DRIZZLE_KEY } from "@/drizzle/constants";
+import type { DrizzleDB } from "@/drizzle/types";
+import { User } from "@/users/users.schema";
+import { Inject, Injectable } from "@nestjs/common";
+import { randomUUID } from "crypto";
 import { DeepgramService } from "./providers/deepgram.service";
+import {
+	Conversation,
+	conversations,
+	Utterance,
+	utterances,
+} from "./voice-translate.schema";
 
 @Injectable()
 export class VoiceTranslationService {
 	constructor(
-		private readonly audioBufferService: AudioBufferService,
 		private readonly deepgramService: DeepgramService,
+		@Inject(DRIZZLE_KEY) private readonly db: DrizzleDB,
 	) {}
 
-	appendAudioChunk(conversationId: string, audioChunk: string): void {
-		this.audioBufferService.appendChunk(conversationId, audioChunk);
-	}
-
-	clearBuffer(conversationId: string): void {
-		this.audioBufferService.clearBuffer(conversationId);
-	}
-
-	async processUtterance(conversationId: string) {
-		const audioBuffer =
-			this.audioBufferService.getFullAudio(conversationId);
-
-		// Call Deepgram STT
-		const originalText = await this.deepgramService.transcribe(audioBuffer);
-
-		// TODO: Call DeepL translation
-		// TODO: Call Deepgram TTS
-
-		this.audioBufferService.clearBuffer(conversationId);
-
-		return {
-			originalText,
-			translatedText: "TODO: Implement translation",
-		};
-	}
-
-	async startConversation(conversationId: string): Promise<void> {
+	async startConversation(userId: User["id"]): Promise<Conversation> {
+		const conversationId = randomUUID();
 		await this.deepgramService.startLiveTranscription(conversationId);
+		const [newConversation] = await this.db
+			.insert(conversations)
+			.values({ id: conversationId, userId })
+			.returning();
+
+		if (!newConversation) {
+			throw new Error("Couldn't create conversation in to the database");
+		}
+		return newConversation;
 	}
 
 	processAudioChunk(conversationId: string, audioChunk: string): void {
 		this.deepgramService.sendAudioChunk(conversationId, audioChunk);
 	}
 
+	startUtterance(conversationId: string, utteranceId: string): void {
+		this.deepgramService.startUtterance(conversationId, utteranceId);
+	}
+
 	async stopUtterance(
 		conversationId: string,
-	): Promise<{ originalText: string; translatedText: string }> {
-		const originalText =
-			await this.deepgramService.finalizeUtterance(conversationId);
+		utteranceId: string,
+	): Promise<Utterance> {
+		const sourceText = await this.deepgramService.finalizeUtterance(
+			conversationId,
+			utteranceId,
+		);
+
+		void this.db
+			.insert(utterances)
+			.values({
+				conversationId,
+				speaker: "user", // TODO: Add speaker detection
+				sourceText,
+				translatedText: "TODO: Implement translation",
+			})
+			.returning()
+			.then((result) => {
+				const [newUtterance] = result;
+				if (!newUtterance) {
+					throw new Error("Couldn't save utterance to database");
+				}
+			});
 
 		// TODO: Call DeepL translation
 		// TODO: Call Deepgram TTS
 
 		return {
-			originalText,
-			translatedText: "TODO: Implement translation",
+			id: randomUUID(),
+			conversationId,
+			speaker: "user",
+			createdAt: new Date().toISOString(),
+			sourceText,
+			translatedText: "Coming soon",
 		};
 	}
 
-	async stopConversation(conversationId: string): Promise<void> {
+	async stopConversation(conversationId: string): Promise<Utterance | null> {
+		let finalUtterance: Utterance | null = null;
+		const currentUtteranceId =
+			this.deepgramService.getCurrentUtteranceId(conversationId);
+		if (currentUtteranceId) {
+			finalUtterance = await this.stopUtterance(
+				conversationId,
+				currentUtteranceId,
+			);
+		}
+
 		await this.deepgramService.closeConnection(conversationId);
-		this.audioBufferService.clearBuffer(conversationId);
+		return finalUtterance;
 	}
 }

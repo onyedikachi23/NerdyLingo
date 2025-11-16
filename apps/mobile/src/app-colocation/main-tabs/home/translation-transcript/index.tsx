@@ -2,12 +2,14 @@
 
 import { Box } from "@/components/ui/box";
 import { Image } from "@/components/ui/image";
-import { DetectedLanguage } from "./detected-language";
-import { PrevTranslations } from "./previous-translations";
-import { CurrentTranslations } from "./current-translations";
+import { DetectedLanguage } from "./components/detected-language";
+import { PrevTranslations } from "./components/previous-translations";
+import { CurrentTranslations } from "./components/current-translations";
 import { ScrollView } from "react-native";
+import { useListenForUtteranceResult } from "./hooks/use-listen-for-utterance-result";
 
 export const TranslationTranscript = () => {
+	useListenForUtteranceResult();
 	return (
 		<Box className="relative flex-1">
 			<Image

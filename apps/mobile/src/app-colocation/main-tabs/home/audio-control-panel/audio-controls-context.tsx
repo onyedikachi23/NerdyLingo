@@ -2,10 +2,20 @@
 
 import React from "react";
 
-export type UtteranceState = "idle" | "starting" | "speaking" | "stopping";
+export type UtteranceStatus = "idle" | "starting" | "speaking" | "stopping";
+
+type UtteranceState =
+	| {
+			status: "idle" | "starting";
+			id: null;
+	  }
+	| {
+			status: "speaking" | "stopping";
+			id: string;
+	  };
 
 interface AudioControlsContextType {
-	utteranceStateRef: React.MutableRefObject<UtteranceState>;
+	utteranceStateRef: React.RefObject<UtteranceState>;
 }
 
 const AudioControlsContext =
@@ -19,13 +29,18 @@ const AudioControlsProvider = ({
 	roomId: string | null;
 }) => {
 	// Use ref for internal control state - no re-renders needed
-	const utteranceStateRef = React.useRef<UtteranceState>("idle");
+	const utteranceStateRef = React.useRef<UtteranceState>({
+		status: "idle",
+		id: null,
+	});
 
 	// Reset state when conversation ends (roomId cleared)
 	React.useEffect(() => {
 		if (!roomId) {
-			console.log("[DEBUG] Conversation ended, resetting utterance state to idle");
-			utteranceStateRef.current = "idle";
+			console.log(
+				"[DEBUG] Conversation ended, resetting utterance state to idle",
+			);
+			utteranceStateRef.current = { status: "idle", id: null };
 		}
 	}, [roomId]);
 
